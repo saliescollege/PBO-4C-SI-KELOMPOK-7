@@ -1,9 +1,10 @@
+package model;
 import javax.swing.*;
 import java.awt.*;
 
-public class DokterPage extends JFrame {
+public class Dokter extends JFrame {
 
-    public DokterPage() {
+    public Dokter() {
         setTitle("Daftar Dokter");
         setSize(720, 520);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -75,7 +76,7 @@ public class DokterPage extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(DokterPage::new);
+        SwingUtilities.invokeLater(Dokter::new);
     }
 }
 
@@ -109,7 +110,7 @@ class ButtonEditor extends DefaultCellEditor {
                 String ruangan = table.getValueAt(row, 2).toString();
                 String jadwal = table.getValueAt(row, 3).toString();
 
-                new DetailDokterPage(nama, spesialis, ruangan, jadwal);
+                new DetailDokter(nama, spesialis, ruangan, jadwal);
             }
         });
     }
@@ -132,8 +133,8 @@ class ButtonEditor extends DefaultCellEditor {
     }
 }
 
-class DetailDokterPage extends JFrame {
-    public DetailDokterPage(String nama, String spesialis, String ruangan, String jadwal) {
+class DetailDokter extends JFrame {
+    public DetailDokter(String nama, String spesialis, String ruangan, String jadwal) {
         setTitle("Detail Dokter");
         setSize(400, 300);
         setLocationRelativeTo(null);

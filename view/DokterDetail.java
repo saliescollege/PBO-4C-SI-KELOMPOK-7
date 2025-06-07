@@ -1,9 +1,10 @@
+package view;
 import javax.swing.*;
 import java.awt.*;
 
-public class DetailDokterPage extends JFrame {
+public class DokterDetail extends JFrame {
 
-    public DetailDokterPage(String nama, String spesialisasi, String ruangan, String jadwal) {
+    public DokterDetail(String nama, String spesialisasi, String ruangan, String jadwal) {
         setTitle("Detail Dokter");
         setSize(600, 300);
         setLocationRelativeTo(null);

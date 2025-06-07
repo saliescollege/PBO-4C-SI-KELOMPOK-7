@@ -1,10 +1,9 @@
-package dashboard;
-
+package view;
 import java.awt.*;
 import javax.swing.*;
 
-public class DashboardFrame extends JFrame {
-    public DashboardFrame(String username, String role) {
+public class Dashboard extends JFrame {
+    public Dashboard(String username, String role) {
         setTitle("Dashboard - " + role);
         setSize(900, 500);
         setDefaultCloseOperation(EXIT_ON_CLOSE);

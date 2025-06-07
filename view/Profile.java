@@ -1,8 +1,6 @@
-package dashboard;
+package view;
 
-import login.LoginForm;
-import login.User;
-import login.UserDatabase;
+import model.User;
 
 import javax.swing.*;
 import java.awt.*;

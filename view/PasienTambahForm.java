@@ -1,11 +1,12 @@
+package view;
 import javax.swing.*;
 import java.awt.*;
 
-public class formPasien extends JFrame {
+public class PasienTambahForm extends JFrame {
     private CardLayout cardLayout;
     private JPanel cardPanel;
 
-    public formPasien() {
+    public PasienTambahForm() {
         setTitle("Pasien Baru");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(500, 500);
@@ -70,7 +71,7 @@ public class formPasien extends JFrame {
     }
 
     public static void main(String[] args) {
-        new formPasien();
+        new PasienTambahForm();
     }
 }
 

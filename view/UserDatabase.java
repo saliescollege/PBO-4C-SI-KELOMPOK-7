@@ -1,6 +1,8 @@
-package login;
+package view;
 
 import java.util.ArrayList;
+
+import model.User;
 
 public class UserDatabase {
     // Jangan lupa deklarasi dan inisialisasi users

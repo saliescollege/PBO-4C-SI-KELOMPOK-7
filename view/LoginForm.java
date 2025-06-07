@@ -1,7 +1,9 @@
-package login;
+package view;
 
-import dashboard.DashboardFrame;
+import model.User;
+
 import javax.swing.*;
+
 import java.awt.event.*;
 
 public class LoginForm extends JFrame {
@@ -57,7 +59,7 @@ public class LoginForm extends JFrame {
             if (user != null) {
                 JOptionPane.showMessageDialog(this, "Login Berhasil!");
                 dispose(); // Tutup form login
-                new DashboardFrame(user.getUsername(), user.getRole()); // Buka dashboard
+                new Dashboard(user.getUsername(), user.getRole()); // Buka dashboard
             } else {
                 JOptionPane.showMessageDialog(this, "Username atau password salah!");
             }

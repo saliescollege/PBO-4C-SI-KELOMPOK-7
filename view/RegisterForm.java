@@ -1,4 +1,4 @@
-package login;
+package view;
 
 import javax.swing.*;
 
