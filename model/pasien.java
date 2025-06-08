@@ -3,12 +3,12 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
-public class pasien extends JFrame {
+public class Pasien extends JFrame {
     private DefaultTableModel tableModel;
     private JTable table;
     private JLabel emptyLabel;
 
-    public pasien() {
+    public Pasien() {
         setTitle("asien");
         setSize(600, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -77,6 +77,6 @@ public class pasien extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new pasien().setVisible(true));
+        SwingUtilities.invokeLater(() -> new Pasien().setVisible(true));
     }
 }
