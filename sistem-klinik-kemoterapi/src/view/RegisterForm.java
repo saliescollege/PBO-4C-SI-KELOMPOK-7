@@ -1,77 +1,102 @@
 package view;
 
+import java.awt.*;
 import java.security.*;
 import java.sql.*;
 import javax.swing.*;
 
 public class RegisterForm extends JFrame {
     public RegisterForm() {
-        setTitle("Form Registrasi");
-        setSize(350, 350);
+        setTitle("Registrasi");
+        setSize(350, 470);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(null);
 
-        JLabel userLabel = new JLabel("Username:");
-        userLabel.setBounds(20, 20, 100, 25);
+        // ==== Logo ====
+        ImageIcon logoIcon = new ImageIcon("assets/Logo-Klinik.png");
+        Image logoImg = logoIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
+        JLabel logoLabel = new JLabel(new ImageIcon(logoImg));
+        logoLabel.setBounds((350 - 70) / 2, 20, 70, 70);
+        add(logoLabel);
+
+        // ==== Nama Klinik ====
+        JLabel klinikLabel = new JLabel("KLINIK SENTRA MEDIKA", SwingConstants.CENTER);
+        klinikLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
+        klinikLabel.setBounds(75, 95, 200, 20);
+        add(klinikLabel);
+
+        // ==== Title "Registrasi" ====
+        JLabel titleLabel = new JLabel("Registrasi", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
+        titleLabel.setBounds(75, 130, 200, 30);
+        add(titleLabel);
+
+        // ==== Form Fields ====
+        int labelX = 35;
+        int fieldX = 135;
+        int widthLabel = 100;
+        int widthField = 215;
+        int y = 170; 
+        int gap = 40;
+
+        JLabel userLabel = new JLabel("Username");
+        userLabel.setBounds(labelX, y, widthLabel, 25);
         add(userLabel);
 
         JTextField usernameField = new JTextField();
-        usernameField.setBounds(130, 20, 180, 25);
+        usernameField.setBounds(fieldX, y, widthField - 50, 25);
         add(usernameField);
 
-        JLabel passLabel = new JLabel("Password:");
-        passLabel.setBounds(20, 60, 100, 25);
+        y += gap;
+        JLabel passLabel = new JLabel("Password");
+        passLabel.setBounds(labelX, y, widthLabel, 25);
         add(passLabel);
 
         JPasswordField passwordField = new JPasswordField();
-        passwordField.setBounds(130, 60, 180, 25);
+        passwordField.setBounds(fieldX, y, widthField - 50, 25);
         add(passwordField);
 
-        JLabel nameLabel = new JLabel("Nama Lengkap:");
-        nameLabel.setBounds(20, 100, 100, 25);
+        y += gap;
+        JLabel nameLabel = new JLabel("Nama Lengkap");
+        nameLabel.setBounds(labelX, y, widthLabel, 25);
         add(nameLabel);
 
         JTextField nameField = new JTextField();
-        nameField.setBounds(130, 100, 180, 25);
+        nameField.setBounds(fieldX, y, widthField - 50, 25);
         add(nameField);
 
-        JLabel emailLabel = new JLabel("Email:");
-        emailLabel.setBounds(20, 140, 100, 25);
+        y += gap;
+        JLabel emailLabel = new JLabel("Email");
+        emailLabel.setBounds(labelX, y, widthLabel, 25);
         add(emailLabel);
 
         JTextField emailField = new JTextField();
-        emailField.setBounds(130, 140, 180, 25);
+        emailField.setBounds(fieldX, y, widthField - 50, 25);
         add(emailField);
 
-        JLabel phoneLabel = new JLabel("Telepon:");
-        phoneLabel.setBounds(20, 180, 100, 25);
+        y += gap;
+        JLabel phoneLabel = new JLabel("Telepon");
+        phoneLabel.setBounds(labelX, y, widthLabel, 25);
         add(phoneLabel);
 
         JTextField phoneField = new JTextField();
-        phoneField.setBounds(130, 180, 180, 25);
+        phoneField.setBounds(fieldX, y, widthField - 50, 25);
         add(phoneField);
 
-        JLabel roleLabel = new JLabel("Kategori:");
-        roleLabel.setBounds(20, 220, 100, 25);
-        add(roleLabel);
-
-        String[] roles = { "dokter", "pasien" };
-        JComboBox<String> roleComboBox = new JComboBox<>(roles);
-        roleComboBox.setBounds(130, 220, 180, 25);
-        add(roleComboBox);
-
+        // ==== Tombol Daftar ====
+        y += gap; 
         JButton registerBtn = new JButton("Daftar");
-        registerBtn.setBounds(130, 260, 100, 30);
+        registerBtn.setBounds(labelX, y, 265, 30);
         add(registerBtn);
 
+        // ==== Aksi tombol ====
         registerBtn.addActionListener(e -> {
             String username = usernameField.getText().trim();
             String password = new String(passwordField.getPassword()).trim();
             String fullName = nameField.getText().trim();
             String email = emailField.getText().trim();
             String phone = phoneField.getText().trim();
-            String role = (String) roleComboBox.getSelectedItem();
 
             if (username.isEmpty() || password.isEmpty() || fullName.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Username, password, dan nama wajib diisi.");
@@ -81,7 +106,6 @@ public class RegisterForm extends JFrame {
             try (Connection conn = DriverManager.getConnection(
                     "jdbc:mysql://localhost:3306/db_chemoclinic", "root", "")) {
 
-                // Cek apakah username sudah digunakan
                 PreparedStatement checkStmt = conn.prepareStatement("SELECT * FROM users WHERE username = ?");
                 checkStmt.setString(1, username);
                 ResultSet rs = checkStmt.executeQuery();
@@ -90,7 +114,6 @@ public class RegisterForm extends JFrame {
                     return;
                 }
 
-                // Simpan user baru
                 String insertSQL = "INSERT INTO users (username, password_hash, full_name, email, phone) VALUES (?, ?, ?, ?, ?)";
                 PreparedStatement insertStmt = conn.prepareStatement(insertSQL);
                 insertStmt.setString(1, username);
@@ -101,7 +124,6 @@ public class RegisterForm extends JFrame {
                 insertStmt.executeUpdate();
 
                 JOptionPane.showMessageDialog(this, "Registrasi berhasil!");
-
                 new LoginForm();
                 dispose();
 
