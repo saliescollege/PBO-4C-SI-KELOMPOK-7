@@ -1,3 +1,5 @@
+package model;
+
 import java.awt.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

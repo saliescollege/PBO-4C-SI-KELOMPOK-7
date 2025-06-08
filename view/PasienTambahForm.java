@@ -1,222 +1,189 @@
 package view;
+
+import controller.PasienController;
+import model.Pasien;
+
 import javax.swing.*;
 import java.awt.*;
+import java.time.LocalDate;
 
 public class PasienTambahForm extends JFrame {
+
     private CardLayout cardLayout;
-    private JPanel cardPanel;
+    private JPanel mainPanel;
+
+    // Step 1 - Data Pasien
+    private JTextField tfNama, tfAlamat, tfTelepon, tfTanggalLahir, tfKelamin, tfDiagnosa, tfHistopatologi;
+
+    // Step 2 - Pemeriksaan Fisik
+    private JTextField tfTekananDarah, tfSuhuTubuh, tfDenyutNadi, tfBeratBadan, tfHB, tfLeukosit, tfTrombosit, tfFungsiHati, tfFungsiGinjal;
+
+    // Step 3 - Rencana Terapi
+    private JTextField tfJenisKemoterapi, tfDosis, tfSiklus, tfPremedikasi, tfAksesVena, tfDokterId;
 
     public PasienTambahForm() {
-        setTitle("Pasien Baru");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(500, 500);
+        setTitle("Tambah Pasien");
+        setSize(600, 400);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         cardLayout = new CardLayout();
-        cardPanel = new JPanel(cardLayout);
+        mainPanel = new JPanel(cardLayout);
 
-        DataPasienPanel dataPasienPanel = new DataPasienPanel();
-        PeriksaFisikPanel periksaFisikPanel = new PeriksaFisikPanel();
-        RencanaTerapiPanel rencanaTerapiPanel = new RencanaTerapiPanel();
-        HasilPanel hasilPanel = new HasilPanel(); // Tambahkan panel hasil
+        mainPanel.add(step1Panel(), "Step1");
+        mainPanel.add(step2Panel(), "Step2");
+        mainPanel.add(step3Panel(), "Step3");
 
-        cardPanel.add(dataPasienPanel, "DataPasien");
-        cardPanel.add(periksaFisikPanel, "PeriksaFisik");
-        cardPanel.add(rencanaTerapiPanel, "RencanaTerapi");
-        cardPanel.add(hasilPanel, "Hasil"); // Tambahkan ke cardPanel
+        add(mainPanel);
+        cardLayout.show(mainPanel, "Step1");
+    }
 
-        dataPasienPanel.nextButton.addActionListener(e -> cardLayout.show(cardPanel, "PeriksaFisik"));
-        periksaFisikPanel.nextButton.addActionListener(e -> cardLayout.show(cardPanel, "RencanaTerapi"));
-        rencanaTerapiPanel.submitButton.addActionListener(e -> {
-            // Ambil data dari semua panel
-            StringBuilder hasil = new StringBuilder();
-            hasil.append("=== Data Pasien ===\n");
-            hasil.append("Nama: ").append(dataPasienPanel.namaField.getText()).append("\n");
-            hasil.append("Alamat: ").append(dataPasienPanel.alamatArea.getText()).append("\n");
-            hasil.append("No. Telepon: ").append(dataPasienPanel.teleponField.getText()).append("\n");
-            hasil.append("Tanggal Lahir: ").append(dataPasienPanel.tglLahirField.getText()).append("\n");
-            hasil.append("Jenis Kelamin: ").append(dataPasienPanel.kelaminBox.getSelectedItem()).append("\n");
-            hasil.append("Diagnosa: ").append(dataPasienPanel.diagnosaArea.getText()).append("\n");
-            hasil.append("Tipe Histopatologi: ").append(dataPasienPanel.histopatologiArea.getText()).append("\n\n");
+    private JPanel step1Panel() {
+        JPanel panel = new JPanel(new GridLayout(8, 2, 10, 5));
+        panel.setBorder(BorderFactory.createTitledBorder("Data Pasien"));
 
-            hasil.append("=== Pemeriksaan Fisik ===\n");
-            hasil.append("Tekanan Darah: ").append(periksaFisikPanel.tekananDarah.getText()).append("\n");
-            hasil.append("Suhu Tubuh: ").append(periksaFisikPanel.suhuTubuh.getText()).append("\n");
-            hasil.append("Denyut Nadi: ").append(periksaFisikPanel.nadi.getText()).append("\n");
-            hasil.append("Berat Badan: ").append(periksaFisikPanel.beratBadan.getText()).append("\n");
-            hasil.append("HB: ").append(periksaFisikPanel.hb.getText()).append("\n");
-            hasil.append("Leukosit: ").append(periksaFisikPanel.leukosit.getText()).append("\n");
-            hasil.append("Trombosit: ").append(periksaFisikPanel.trombosit.getText()).append("\n");
-            hasil.append("Fungsi Hati: ").append(periksaFisikPanel.fungsiHati.getText()).append("\n");
-            hasil.append("Fungsi Ginjal: ").append(periksaFisikPanel.fungsiGinjal.getText()).append("\n\n");
+        tfNama = new JTextField();
+        tfAlamat = new JTextField();
+        tfTelepon = new JTextField();
+        tfTanggalLahir = new JTextField("2000-01-01");  // format yyyy-mm-dd
+        tfKelamin = new JTextField();
+        tfDiagnosa = new JTextField();
+        tfHistopatologi = new JTextField();
 
-            hasil.append("=== Rencana Terapi ===\n");
-            hasil.append("Jenis Kemoterapi: ").append(rencanaTerapiPanel.jenisKemoterapi.getText()).append("\n");
-            hasil.append("Dosis: ").append(rencanaTerapiPanel.dosis.getText()).append("\n");
-            hasil.append("Siklus: ").append(rencanaTerapiPanel.siklus.getText()).append("\n");
-            hasil.append("Premedikasi: ").append(rencanaTerapiPanel.premedikasi.getText()).append("\n");
-            hasil.append("Akses Vena: ").append(rencanaTerapiPanel.aksesVena.getText()).append("\n");
-            hasil.append("Dokter Penanggung Jawab: ").append(rencanaTerapiPanel.dokterPenanggungJawab.getText()).append("\n");
+        panel.add(new JLabel("Nama Lengkap"));
+        panel.add(tfNama);
+        panel.add(new JLabel("Alamat"));
+        panel.add(tfAlamat);
+        panel.add(new JLabel("No. Telepon"));
+        panel.add(tfTelepon);
+        panel.add(new JLabel("Tanggal Lahir (yyyy-mm-dd)"));
+        panel.add(tfTanggalLahir);
+        panel.add(new JLabel("Jenis Kelamin"));
+        panel.add(tfKelamin);
+        panel.add(new JLabel("Diagnosa"));
+        panel.add(tfDiagnosa);
+        panel.add(new JLabel("Tipe Histopatologi"));
+        panel.add(tfHistopatologi);
 
-            hasilPanel.setHasil(hasil.toString());
-            cardLayout.show(cardPanel, "Hasil");
-        });
+        JButton nextBtn = new JButton("Next");
+        nextBtn.addActionListener(e -> cardLayout.show(mainPanel, "Step2"));
+        panel.add(nextBtn);
+        panel.add(new JLabel());
 
-        hasilPanel.selesaiButton.addActionListener(e -> {
-            // Kembali ke awal atau tutup form
-            cardLayout.show(cardPanel, "DataPasien");
-        });
+        return panel;
+    }
 
-        add(cardPanel);
-        setVisible(true);
+    private JPanel step2Panel() {
+        JPanel panel = new JPanel(new GridLayout(10, 2, 10, 5));
+        panel.setBorder(BorderFactory.createTitledBorder("Pemeriksaan Fisik dan Penunjang"));
+
+        tfTekananDarah = new JTextField();
+        tfSuhuTubuh = new JTextField();
+        tfDenyutNadi = new JTextField();
+        tfBeratBadan = new JTextField();
+        tfHB = new JTextField();
+        tfLeukosit = new JTextField();
+        tfTrombosit = new JTextField();
+        tfFungsiHati = new JTextField();
+        tfFungsiGinjal = new JTextField();
+
+        panel.add(new JLabel("Tekanan Darah"));
+        panel.add(tfTekananDarah);
+        panel.add(new JLabel("Suhu Tubuh"));
+        panel.add(tfSuhuTubuh);
+        panel.add(new JLabel("Denyut Nadi"));
+        panel.add(tfDenyutNadi);
+        panel.add(new JLabel("Berat Badan"));
+        panel.add(tfBeratBadan);
+        panel.add(new JLabel("HB (Hemoglobin)"));
+        panel.add(tfHB);
+        panel.add(new JLabel("Leukosit"));
+        panel.add(tfLeukosit);
+        panel.add(new JLabel("Trombosit"));
+        panel.add(tfTrombosit);
+        panel.add(new JLabel("Fungsi Hati (SGOT/SGPT)"));
+        panel.add(tfFungsiHati);
+        panel.add(new JLabel("Fungsi Ginjal (Ureum/Kreatinin)"));
+        panel.add(tfFungsiGinjal);
+
+        JButton nextBtn = new JButton("Next");
+        nextBtn.addActionListener(e -> cardLayout.show(mainPanel, "Step3"));
+        panel.add(nextBtn);
+        panel.add(new JLabel());
+
+        return panel;
+    }
+
+    private JPanel step3Panel() {
+        JPanel panel = new JPanel(new GridLayout(7, 2, 10, 5));
+        panel.setBorder(BorderFactory.createTitledBorder("Rencana Terapi"));
+
+        tfJenisKemoterapi = new JTextField();
+        tfDosis = new JTextField();
+        tfSiklus = new JTextField();
+        tfPremedikasi = new JTextField();
+        tfAksesVena = new JTextField();
+        tfDokterId = new JTextField();
+
+        panel.add(new JLabel("Jenis Kemoterapi"));
+        panel.add(tfJenisKemoterapi);
+        panel.add(new JLabel("Dosis"));
+        panel.add(tfDosis);
+        panel.add(new JLabel("Siklus"));
+        panel.add(tfSiklus);
+        panel.add(new JLabel("Premedikasi"));
+        panel.add(tfPremedikasi);
+        panel.add(new JLabel("Akses Vena"));
+        panel.add(tfAksesVena);
+        panel.add(new JLabel("Dokter Penanggung Jawab (ID)"));
+        panel.add(tfDokterId);
+
+        JButton submitBtn = new JButton("Submit");
+        submitBtn.addActionListener(e -> simpanPasien());
+        panel.add(submitBtn);
+        panel.add(new JLabel());
+
+        return panel;
+    }
+
+    private void simpanPasien() {
+        try {
+            Pasien pasien = new Pasien();
+            pasien.setNama(tfNama.getText());
+            pasien.setAlamat(tfAlamat.getText());
+            pasien.setTelepon(tfTelepon.getText());
+            pasien.setTanggalLahir(LocalDate.parse(tfTanggalLahir.getText()));
+            pasien.setKelamin(tfKelamin.getText());
+            pasien.setDiagnosa(tfDiagnosa.getText());
+            pasien.setHistopatologi(tfHistopatologi.getText());
+
+            pasien.setTekananDarah(tfTekananDarah.getText());
+            pasien.setSuhuTubuh(tfSuhuTubuh.getText());
+            pasien.setDenyutNadi(tfDenyutNadi.getText());
+            pasien.setBeratBadan(tfBeratBadan.getText());
+            pasien.setHb(tfHB.getText());
+            pasien.setLeukosit(tfLeukosit.getText());
+            pasien.setTrombosit(tfTrombosit.getText());
+            pasien.setFungsiHati(tfFungsiHati.getText());
+            pasien.setFungsiGinjal(tfFungsiGinjal.getText());
+
+            pasien.setJenisKemoterapi(tfJenisKemoterapi.getText());
+            pasien.setDosis(tfDosis.getText());
+            pasien.setSiklus(tfSiklus.getText());
+            pasien.setPremedikasi(tfPremedikasi.getText());
+            pasien.setAksesVena(tfAksesVena.getText());
+            pasien.setDokterId(Integer.parseInt(tfDokterId.getText()));
+
+            PasienController.tambahPasien(pasien);
+            JOptionPane.showMessageDialog(this, "Data pasien berhasil disimpan.");
+            dispose();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal menyimpan data pasien.");
+        }
     }
 
     public static void main(String[] args) {
-        new PasienTambahForm();
-    }
-}
-
-class DataPasienPanel extends JPanel {
-    JTextField namaField, teleponField;
-    JTextArea alamatArea, diagnosaArea, histopatologiArea;
-    JFormattedTextField tglLahirField;
-    JComboBox<String> kelaminBox;
-    JButton nextButton;
-
-    public DataPasienPanel() {
-        setLayout(new GridLayout(8, 2));
-        add(new JLabel("Nama Lengkap:"));
-        namaField = new JTextField();
-        add(namaField);
-
-        add(new JLabel("Alamat:"));
-        alamatArea = new JTextArea(2, 15);
-        add(new JScrollPane(alamatArea));
-
-        add(new JLabel("No. Telepon:"));
-        teleponField = new JTextField();
-        add(teleponField);
-
-        add(new JLabel("Tanggal Lahir (yyyy-MM-dd):"));
-        tglLahirField = new JFormattedTextField(new java.text.SimpleDateFormat("yyyy-MM-dd"));
-        add(tglLahirField);
-
-        add(new JLabel("Jenis Kelamin:"));
-        kelaminBox = new JComboBox<>(new String[]{"Laki-laki", "Perempuan"});
-        add(kelaminBox);
-
-        add(new JLabel("Diagnosa:"));
-        diagnosaArea = new JTextArea(2, 15);
-        add(new JScrollPane(diagnosaArea));
-
-        add(new JLabel("Tipe Histopatologi:"));
-        histopatologiArea = new JTextArea(2, 15);
-        add(new JScrollPane(histopatologiArea));
-
-        nextButton = new JButton("Next");
-        add(new JLabel()); // spacer
-        add(nextButton);
-    }
-}
-
-class PeriksaFisikPanel extends JPanel {
-    JTextField tekananDarah, suhuTubuh, nadi, beratBadan, hb, leukosit, trombosit, fungsiHati, fungsiGinjal;
-    JButton nextButton;
-
-    public PeriksaFisikPanel() {
-        setLayout(new GridLayout(10, 2));
-        add(new JLabel("Tekanan Darah:"));
-        tekananDarah = new JTextField();
-        add(tekananDarah);
-
-        add(new JLabel("Suhu Tubuh:"));
-        suhuTubuh = new JTextField();
-        add(suhuTubuh);
-
-        add(new JLabel("Denyut Nadi:"));
-        nadi = new JTextField();
-        add(nadi);
-
-        add(new JLabel("Berat Badan:"));
-        beratBadan = new JTextField();
-        add(beratBadan);
-
-        add(new JLabel("HB (Hemoglobin):"));
-        hb = new JTextField();
-        add(hb);
-
-        add(new JLabel("Leukosit:"));
-        leukosit = new JTextField();
-        add(leukosit);
-
-        add(new JLabel("Trombosit:"));
-        trombosit = new JTextField();
-        add(trombosit);
-
-        add(new JLabel("Fungsi Hati (SGOT/SGPT):"));
-        fungsiHati = new JTextField();
-        add(fungsiHati);
-
-        add(new JLabel("Fungsi Ginjal (Ureum/Kreatinin):"));
-        fungsiGinjal = new JTextField();
-        add(fungsiGinjal);
-
-        nextButton = new JButton("Next");
-        add(new JLabel()); // spacer
-        add(nextButton);
-    }
-}
-
-class RencanaTerapiPanel extends JPanel {
-    JTextField jenisKemoterapi, dosis, siklus, premedikasi, aksesVena, dokterPenanggungJawab;
-    JButton submitButton;
-
-    public RencanaTerapiPanel() {
-        setLayout(new GridLayout(7, 2));
-        add(new JLabel("Jenis Kemoterapi:"));
-        jenisKemoterapi = new JTextField();
-        add(jenisKemoterapi);
-
-        add(new JLabel("Dosis:"));
-        dosis = new JTextField();
-        add(dosis);
-
-        add(new JLabel("Siklus:"));
-        siklus = new JTextField();
-        add(siklus);
-
-        add(new JLabel("Premedikasi:"));
-        premedikasi = new JTextField();
-        add(premedikasi);
-
-        add(new JLabel("Akses Vena:"));
-        aksesVena = new JTextField();
-        add(aksesVena);
-
-        add(new JLabel("Dokter Penanggung Jawab:"));
-        dokterPenanggungJawab = new JTextField();
-        add(dokterPenanggungJawab);
-
-        submitButton = new JButton("Submit");
-        add(new JLabel()); // spacer
-        add(submitButton);
-    }
-}
-
-// Tambahkan class HasilPanel
-class HasilPanel extends JPanel {
-    JTextArea hasilArea;
-    JButton selesaiButton;
-
-    public HasilPanel() {
-        setLayout(new BorderLayout());
-        hasilArea = new JTextArea();
-        hasilArea.setEditable(false);
-        add(new JScrollPane(hasilArea), BorderLayout.CENTER);
-        selesaiButton = new JButton("Selesai");
-        add(selesaiButton, BorderLayout.SOUTH);
-    }
-
-    public void setHasil(String hasil) {
-        hasilArea.setText(hasil);
+        SwingUtilities.invokeLater(() -> new PasienTambahForm().setVisible(true));
     }
 }
