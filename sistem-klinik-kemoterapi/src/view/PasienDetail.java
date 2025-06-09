@@ -15,6 +15,7 @@ public class PasienDetail extends JFrame {
         setSize(400, 400);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout(10, 10));
 
         Pasien pasien = PasienController.getPasienById(pasienId);
         if (pasien == null) {
@@ -23,7 +24,7 @@ public class PasienDetail extends JFrame {
             return;
         }
 
-        JPanel panel = new JPanel(new GridLayout(0, 1));
+        JPanel panel = new JPanel(new GridLayout(0, 1, 5, 5));
         panel.setBorder(BorderFactory.createTitledBorder("Informasi Pasien"));
 
         lblNama = new JLabel("Nama Lengkap: " + pasien.getNama());
@@ -47,7 +48,12 @@ public class PasienDetail extends JFrame {
         JButton btnClose = new JButton("Tutup");
         btnClose.addActionListener(e -> dispose());
 
+        JPanel btnPanel = new JPanel();
+        btnPanel.add(btnClose);
+
         add(panel, BorderLayout.CENTER);
-        add(btnClose, BorderLayout.SOUTH);
+        add(btnPanel, BorderLayout.SOUTH);
+
+        setVisible(true);
     }
 }

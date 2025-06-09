@@ -11,7 +11,11 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class Dashboard extends JFrame {
+    private final String username;
+
     public Dashboard(String username) {
+        this.username = username;
+
         setTitle("Dashboard");
         setSize(900, 500);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -67,6 +71,12 @@ public class Dashboard extends JFrame {
         pasienBtn.setHorizontalTextPosition(SwingConstants.CENTER);
         pasienBtn.setVerticalTextPosition(SwingConstants.BOTTOM);
         pasienBtn.setPreferredSize(new Dimension(480, 270));
+
+        // Tambahkan action listener untuk buka PasienList
+        pasienBtn.addActionListener(e -> {
+            new PasienList(username).setVisible(true);
+            Dashboard.this.dispose();
+        });
 
         ImageIcon dokterImg = new ImageIcon(new ImageIcon("assets/Dokter.png").getImage().getScaledInstance(480, 270, Image.SCALE_SMOOTH));
         JButton dokterBtn = new JButton("Dokter", dokterImg);
@@ -133,6 +143,6 @@ public class Dashboard extends JFrame {
     }
 
     public static void main(String[] args) {
-        new Dashboard("User123");
+        SwingUtilities.invokeLater(() -> new Dashboard("User123").setVisible(true));
     }
 }
