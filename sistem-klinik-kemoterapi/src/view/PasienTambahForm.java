@@ -5,13 +5,11 @@ import model.Pasien;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 
-public class PasienTambahForm extends JFrame {
+public class PasienTambahForm extends BaseFrame { // <-- Mengubah dari JFrame menjadi BaseFrame
 
-    private final String username;
     private final CardLayout cardLayout;
     private final JPanel mainPanel;
 
@@ -23,15 +21,10 @@ public class PasienTambahForm extends JFrame {
     private JTextField tfJenisKemoterapi, tfDosis, tfSiklus, tfPremedikasi, tfAksesVena, tfDokterId;
 
     public PasienTambahForm(String username) {
-        this.username = username;
+        super("Tambah Pasien", username); // <-- Panggil konstruktor BaseFrame
 
-        setTitle("Tambah Pasien");
-        setSize(900, 500);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
+        // Hapus kode navbar yang sebelumnya ada di sini karena sudah ditangani oleh BaseFrame.
 
-        initNavbar();
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
 
@@ -44,51 +37,6 @@ public class PasienTambahForm extends JFrame {
         setVisible(true);
     }
 
-    private void initNavbar() {
-        JPanel navbar = new JPanel(new BorderLayout());
-        navbar.setBackground(new Color(173, 216, 230));
-        navbar.setPreferredSize(new Dimension(900, 50));
-
-        // Load logo dari resources/assets folder
-        // CHANGE: Use an absolute path or a robust way to load the image
-        ImageIcon logoIcon = new ImageIcon("assets/Logo-Klinik.png"); // This line causes the issue if the path is relative and the execution context is different.
-                                                                    // A more robust way is to use Class.getResource() if the image is in the classpath.
-        Image scaledLogo = logoIcon.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
-        JLabel logo = new JLabel(new ImageIcon(scaledLogo));
-        logo.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 0));
-        logo.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
-        JLabel klinikLabel = new JLabel("KLINIK SENTRA MEDIKA");
-        klinikLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        klinikLabel.setForeground(Color.BLACK);
-        klinikLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 0));
-        klinikLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
-        // Aksi klik menuju Dashboard
-        MouseAdapter toDashboard = new MouseAdapter() {
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                new Dashboard(username).setVisible(true);
-                dispose();
-            }
-        };
-        logo.addMouseListener(toDashboard);
-        klinikLabel.addMouseListener(toDashboard);
-
-        JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        logoPanel.setOpaque(false);
-        logoPanel.add(logo);
-        logoPanel.add(Box.createRigidArea(new Dimension(10, 0)));
-        logoPanel.add(klinikLabel);
-
-        JLabel userLabel = new JLabel("👤 " + username);
-        userLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 20));
-
-        navbar.add(logoPanel, BorderLayout.WEST);
-        navbar.add(userLabel, BorderLayout.EAST);
-        add(navbar, BorderLayout.NORTH);
-    }
-
     private JPanel createStep1Panel() {
         JPanel panel = new JPanel(new GridLayout(8, 2, 10, 5));
         panel.setBorder(BorderFactory.createTitledBorder("Data Pasien"));
@@ -96,7 +44,7 @@ public class PasienTambahForm extends JFrame {
         tfNama = new JTextField();
         tfAlamat = new JTextField();
         tfTelepon = new JTextField();
-        tfTanggalLahir = new JTextField("2000-01-01");  // Format default YYYY-MM-DD
+        tfTanggalLahir = new JTextField("2000-01-01");  // Format default
         tfKelamin = new JTextField();
         tfDiagnosa = new JTextField();
         tfHistopatologi = new JTextField();
@@ -199,17 +147,15 @@ public class PasienTambahForm extends JFrame {
 
     private void simpanPasien() {
         try {
-            // Validasi tanggal lahir
             LocalDate tanggalLahir;
             try {
                 tanggalLahir = LocalDate.parse(tfTanggalLahir.getText().trim());
             } catch (DateTimeParseException e) {
-                JOptionPane.showMessageDialog(this, "Format tanggal lahir tidak valid. Gunakan YYYY-mm-dd.");
+                JOptionPane.showMessageDialog(this, "Format tanggal lahir tidak valid. Gunakan yyyy-mm-dd.");
                 cardLayout.show(mainPanel, "Step1");
                 return;
             }
 
-            // Validasi dokter ID harus angka
             int dokterId;
             try {
                 dokterId = Integer.parseInt(tfDokterId.getText().trim());
@@ -219,7 +165,6 @@ public class PasienTambahForm extends JFrame {
                 return;
             }
 
-            // Buat objek Pasien dan set semua data dari form
             Pasien pasien = new Pasien();
             pasien.setNama(tfNama.getText().trim());
             pasien.setAlamat(tfAlamat.getText().trim());
@@ -246,7 +191,6 @@ public class PasienTambahForm extends JFrame {
             pasien.setAksesVena(tfAksesVena.getText().trim());
             pasien.setDokterId(dokterId);
 
-            // Kirim ke controller untuk disimpan di database
             PasienController.tambahPasien(pasien);
 
             JOptionPane.showMessageDialog(this, "Pasien berhasil ditambahkan!");

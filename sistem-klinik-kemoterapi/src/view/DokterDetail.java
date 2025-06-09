@@ -2,13 +2,14 @@ package view;
 import javax.swing.*;
 import java.awt.*;
 
-public class DokterDetail extends JFrame {
+public class DokterDetail extends BaseFrame { // <-- Mengubah dari JFrame menjadi BaseFrame
 
-    public DokterDetail(String nama, String spesialisasi, String ruangan, String jadwal) {
-        setTitle("Detail Dokter");
-        setSize(600, 300);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+    // PERUBAHAN: Konstruktor sekarang menerima username
+    public DokterDetail(String nama, String spesialisasi, String ruangan, String jadwal, String username) {
+        super("Detail Dokter", username); // <-- Panggil konstruktor BaseFrame
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Tetap DISPOSE_ON_CLOSE untuk jendela detail
+
+        // Hapus kode navbar yang sebelumnya ada di sini karena sudah ditangani oleh BaseFrame.
 
         String[][] data = {
             {"Nama", nama},
@@ -23,7 +24,7 @@ public class DokterDetail extends JFrame {
 
         JTable detailTable = new JTable(data, kolom) {
             public boolean isCellEditable(int row, int column) {
-                return false; 
+                return false;
             }
         };
 

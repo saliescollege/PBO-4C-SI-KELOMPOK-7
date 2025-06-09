@@ -20,12 +20,12 @@ public class Dashboard extends BaseFrame { // Mengubah dari JFrame menjadi BaseF
 
         // Tombol Pasien
         ImageIcon pasienIcon = new ImageIcon("assets/Pasien.png"); // Mengambil gambar pasien
-        Image scaledPasienImg = pasienIcon.getImage().getScaledInstance(900, 500, Image.SCALE_SMOOTH); // Skala gambar
+        Image scaledPasienImg = pasienIcon.getImage().getScaledInstance(480, 270, Image.SCALE_SMOOTH); // Skala gambar
         JButton pasienBtn = new JButton("Pasien", new ImageIcon(scaledPasienImg));
         pasienBtn.setHorizontalTextPosition(SwingConstants.CENTER); // Teks di tengah horizontal
         pasienBtn.setVerticalTextPosition(SwingConstants.BOTTOM); // Teks di bawah ikon
         pasienBtn.setFont(new Font("Arial", Font.BOLD, 16)); // Font tombol
-        pasienBtn.setPreferredSize(new Dimension(480, 270)); // Ukuran preferensi tombol (opsional, layout akan mengatur)
+        pasienBtn.setPreferredSize(new Dimension(250, 250)); // Ukuran preferensi tombol (opsional, layout akan mengatur)
         pasienBtn.addActionListener(e -> {
             new PasienList(username).setVisible(true); // Buka halaman daftar pasien
             dispose(); // Tutup dashboard

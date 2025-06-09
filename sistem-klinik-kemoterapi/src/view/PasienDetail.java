@@ -6,16 +6,16 @@ import model.Pasien;
 import javax.swing.*;
 import java.awt.*;
 
-public class PasienDetail extends JFrame {
+public class PasienDetail extends BaseFrame { // <-- Mengubah dari JFrame menjadi BaseFrame
 
     private JLabel lblNama, lblAlamat, lblTelepon, lblTanggalLahir, lblKelamin, lblDiagnosa, lblHistopatologi, lblDokterId;
 
-    public PasienDetail(int pasienId) {
-        setTitle("Detail Pasien");
-        setSize(400, 400);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLayout(new BorderLayout(10, 10));
+    // PERUBAHAN: Konstruktor sekarang menerima username
+    public PasienDetail(int pasienId, String username) {
+        super("Detail Pasien", username); // <-- Panggil konstruktor BaseFrame
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Tetap DISPOSE_ON_CLOSE untuk jendela detail
+
+        // Hapus kode navbar yang sebelumnya ada di sini karena sudah ditangani oleh BaseFrame.
 
         Pasien pasien = PasienController.getPasienById(pasienId);
         if (pasien == null) {
