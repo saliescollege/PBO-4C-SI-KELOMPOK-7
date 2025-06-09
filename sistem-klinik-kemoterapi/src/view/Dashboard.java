@@ -4,6 +4,8 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import db.DBConnection;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -41,9 +43,18 @@ public class Dashboard extends JFrame {
 
         navbar.add(logoPanel, BorderLayout.WEST);
 
-        // User label
+        // User label yang clickable
         JLabel userLabel = new JLabel("👤 " + username);
         userLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 20));
+        userLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        userLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                // buka Profile dan tutup Dashboard
+                new Profile(username).setVisible(true);
+                Dashboard.this.dispose();
+            }
+        });
         navbar.add(userLabel, BorderLayout.EAST);
 
         // Panel kiri

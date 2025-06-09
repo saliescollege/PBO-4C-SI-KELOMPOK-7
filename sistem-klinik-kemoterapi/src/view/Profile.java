@@ -1,97 +1,201 @@
 package view;
 
-import model.User;
-
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
+import java.sql.*;
 
-public class Profile extends JDialog {
+import db.DBConnection;
 
-    private String currentUsername;
-    private String currentRole;
+public class Profile extends JFrame {
+    private JTextField namaField, emailField, phoneField;
+    private JButton editBtn, saveBtn, cancelBtn;
 
-    private JTextField usernameField;
-    private JPasswordField passwordField;
+    private final String username;
 
-    public Profile(JFrame parent, String username, String role) {
-        super(parent, "Profil Pengguna", true);
-        this.currentUsername = username;
-        this.currentRole = role;
+    public Profile(String username) {
+        this.username = username;
 
-        setSize(350, 220);
-        setLocationRelativeTo(parent);
-        setLayout(new BorderLayout(10,10));
-        setResizable(false);
+        setTitle("Profil");
+        setSize(900, 500);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
 
-        JPanel formPanel = new JPanel(new GridLayout(3, 2, 8, 8));
-        formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        // Navbar
+        JPanel navbar = new JPanel(new BorderLayout());
+        navbar.setBackground(new Color(173, 216, 230));
+        navbar.setPreferredSize(new Dimension(900, 50));
 
-        formPanel.add(new JLabel("Username:"));
-        usernameField = new JTextField(currentUsername);
-        formPanel.add(usernameField);
-
-        formPanel.add(new JLabel("Role:"));
-        JTextField roleField = new JTextField(currentRole);
-        roleField.setEditable(false);
-        formPanel.add(roleField);
-
-        formPanel.add(new JLabel("Password baru:"));
-        passwordField = new JPasswordField();
-        formPanel.add(passwordField);
-
-        add(formPanel, BorderLayout.CENTER);
-
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton saveBtn = new JButton("Simpan");
-        JButton logoutBtn = new JButton("Logout");
-        JButton cancelBtn = new JButton("Batal");
-
-        buttonPanel.add(saveBtn);
-        buttonPanel.add(logoutBtn);
-        buttonPanel.add(cancelBtn);
-
-        add(buttonPanel, BorderLayout.SOUTH);
-
-        // Action tombol Simpan
-        saveBtn.addActionListener(e -> {
-            String newUsername = usernameField.getText().trim();
-            String newPassword = new String(passwordField.getPassword()).trim();
-
-            if (newUsername.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Username tidak boleh kosong!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            if (!newUsername.equals(currentUsername) && UserDatabase.isUsernameExists(newUsername)) {
-                JOptionPane.showMessageDialog(this, "Username sudah digunakan!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Update user di database
-            boolean success = UserDatabase.updateUser(currentUsername, newUsername, newPassword);
-            if (success) {
-                JOptionPane.showMessageDialog(this, "Profil berhasil diperbarui.");
-                this.currentUsername = newUsername; // update internal
+        // Logo dan teks yang bisa diklik
+        ImageIcon logoIcon = new ImageIcon("assets/Logo-Klinik.png");
+        Image scaledLogo = logoIcon.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
+        JLabel logo = new JLabel(new ImageIcon(scaledLogo));
+        logo.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 0));
+        logo.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        logo.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                new Dashboard(username).setVisible(true);
                 dispose();
-                // Biasanya setelah update username, kamu mungkin mau refresh dashboard label
-            } else {
-                JOptionPane.showMessageDialog(this, "Gagal memperbarui profil.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        // Action tombol Logout
-        logoutBtn.addActionListener(e -> {
-            dispose();
-            Window parentWindow = SwingUtilities.getWindowAncestor(this);
-            if (parentWindow != null) {
-                parentWindow.dispose(); // tutup dashboard
+        JLabel klinikLabel = new JLabel("KLINIK SENTRA MEDIKA");
+        klinikLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        klinikLabel.setForeground(Color.BLACK);
+        klinikLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 0));
+        klinikLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        klinikLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                new Dashboard(username).setVisible(true);
+                dispose();
             }
-            new LoginForm(); // buka login lagi
         });
 
-        // Action tombol Batal
-        cancelBtn.addActionListener(e -> dispose());
+        JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        logoPanel.setOpaque(false);
+        logoPanel.add(logo);
+        logoPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        logoPanel.add(klinikLabel);
+
+        // Label user kanan atas
+        JLabel userLabel = new JLabel("👤 " + username);
+        userLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 20));
+        navbar.add(logoPanel, BorderLayout.WEST);
+        navbar.add(userLabel, BorderLayout.EAST);
+
+        add(navbar, BorderLayout.NORTH);
+
+        // Panel utama konten profil
+        JPanel contentPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 20, 10, 20);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0; gbc.gridy = 0;
+        contentPanel.add(new JLabel("Nama Lengkap:"), gbc);
+        gbc.gridy++;
+        namaField = new JTextField(20);
+        namaField.setEnabled(false);
+        contentPanel.add(namaField, gbc);
+
+        gbc.gridy++;
+        contentPanel.add(new JLabel("Email:"), gbc);
+        gbc.gridy++;
+        emailField = new JTextField(20);
+        emailField.setEnabled(false);
+        contentPanel.add(emailField, gbc);
+
+        gbc.gridy++;
+        contentPanel.add(new JLabel("No Telepon:"), gbc);
+        gbc.gridy++;
+        phoneField = new JTextField(20);
+        phoneField.setEnabled(false);
+        contentPanel.add(phoneField, gbc);
+
+        // Panel tombol
+        gbc.gridy++;
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        editBtn = new JButton("Edit");
+        saveBtn = new JButton("Simpan");
+        cancelBtn = new JButton("Batal");
+
+        saveBtn.setEnabled(false);
+        cancelBtn.setEnabled(false);
+
+        buttonPanel.add(editBtn);
+        buttonPanel.add(saveBtn);
+        buttonPanel.add(cancelBtn);
+        gbc.gridwidth = 2;
+        contentPanel.add(buttonPanel, gbc);
+
+        add(contentPanel, BorderLayout.CENTER);
+
+        // Load profil dari DB
+        loadProfile();
+
+        // Event listeners
+        editBtn.addActionListener(e -> setEditMode(true));
+
+        saveBtn.addActionListener(e -> {
+            if (validateInput() && updateProfile()) {
+                JOptionPane.showMessageDialog(this, "Profil berhasil disimpan!");
+                setEditMode(false);
+            }
+        });
+
+        cancelBtn.addActionListener(e -> {
+            loadProfile();
+            setEditMode(false);
+        });
 
         setVisible(true);
+    }
+
+    private void loadProfile() {
+        try (Connection conn = DBConnection.connect()) {
+            String query = "SELECT full_name, email, phone FROM users WHERE username = ?";
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                namaField.setText(rs.getString("full_name"));
+                emailField.setText(rs.getString("email"));
+                phoneField.setText(rs.getString("phone"));
+            } else {
+                JOptionPane.showMessageDialog(this, "Data profil tidak ditemukan.");
+                dispose();
+            }
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Gagal memuat profil: " + e.getMessage());
+        }
+    }
+
+    private boolean updateProfile() {
+        try (Connection conn = DBConnection.connect()) {
+            String query = "UPDATE users SET full_name = ?, email = ?, phone = ? WHERE username = ?";
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setString(1, namaField.getText().trim());
+            stmt.setString(2, emailField.getText().trim());
+            stmt.setString(3, phoneField.getText().trim());
+            stmt.setString(4, username);
+
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Gagal menyimpan profil: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private void setEditMode(boolean editable) {
+        namaField.setEnabled(editable);
+        emailField.setEnabled(editable);
+        phoneField.setEnabled(editable);
+
+        saveBtn.setEnabled(editable);
+        cancelBtn.setEnabled(editable);
+        editBtn.setEnabled(!editable);
+    }
+
+    private boolean validateInput() {
+        if (namaField.getText().trim().isEmpty() ||
+            emailField.getText().trim().isEmpty() ||
+            phoneField.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Semua field harus diisi.");
+            return false;
+        }
+
+        if (!emailField.getText().contains("@")) {
+            JOptionPane.showMessageDialog(this, "Format email tidak valid.");
+            return false;
+        }
+
+        return true;
     }
 }

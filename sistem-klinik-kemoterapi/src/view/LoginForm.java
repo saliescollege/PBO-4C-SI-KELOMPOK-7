@@ -118,7 +118,7 @@ public class LoginForm extends JFrame {
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 String fullName = rs.getString("full_name");
-                JOptionPane.showMessageDialog(this, "Login berhasil!\nSelamat datang " + fullName);
+                JOptionPane.showMessageDialog(this, "Login berhasil!\nSelamat datang, " + fullName + "."); 
 
                 // === Tambahkan baris ini ===
                 new Dashboard(fullName); // Buka dashboard setelah login berhasil
