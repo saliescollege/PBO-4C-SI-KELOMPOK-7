@@ -50,7 +50,9 @@ public class PasienTambahForm extends JFrame {
         navbar.setPreferredSize(new Dimension(900, 50));
 
         // Load logo dari resources/assets folder
-        ImageIcon logoIcon = new ImageIcon(getClass().getResource("/assets/Logo-Klinik.png"));
+        // CHANGE: Use an absolute path or a robust way to load the image
+        ImageIcon logoIcon = new ImageIcon("assets/Logo-Klinik.png"); // This line causes the issue if the path is relative and the execution context is different.
+                                                                    // A more robust way is to use Class.getResource() if the image is in the classpath.
         Image scaledLogo = logoIcon.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
         JLabel logo = new JLabel(new ImageIcon(scaledLogo));
         logo.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 0));
@@ -94,7 +96,7 @@ public class PasienTambahForm extends JFrame {
         tfNama = new JTextField();
         tfAlamat = new JTextField();
         tfTelepon = new JTextField();
-        tfTanggalLahir = new JTextField("2000-01-01");  // Format default yyyy-MM-dd
+        tfTanggalLahir = new JTextField("2000-01-01");  // Format default YYYY-MM-DD
         tfKelamin = new JTextField();
         tfDiagnosa = new JTextField();
         tfHistopatologi = new JTextField();
@@ -202,7 +204,7 @@ public class PasienTambahForm extends JFrame {
             try {
                 tanggalLahir = LocalDate.parse(tfTanggalLahir.getText().trim());
             } catch (DateTimeParseException e) {
-                JOptionPane.showMessageDialog(this, "Format tanggal lahir tidak valid. Gunakan yyyy-mm-dd.");
+                JOptionPane.showMessageDialog(this, "Format tanggal lahir tidak valid. Gunakan YYYY-mm-dd.");
                 cardLayout.show(mainPanel, "Step1");
                 return;
             }
