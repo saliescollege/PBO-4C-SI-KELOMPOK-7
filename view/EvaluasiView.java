@@ -1,4 +1,4 @@
-package view; 
+package PBO_4C_SI_KELOMPOK_7.view; // Use the correct package name 
 
 import db.DBConnection; // Import your DBConnection class
 import java.awt.*;

@@ -1,4 +1,4 @@
-package model;
+package PBO_4C_SI_KELOMPOK_7.model;
 
 import java.awt.*;
 import java.text.ParseException;

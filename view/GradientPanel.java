@@ -1,5 +1,5 @@
 // File: src/view/GradientPanel.java
-package view;
+package PBO_4C_SI_KELOMPOK_7.view;
 
 import javax.swing.*;
 import java.awt.*;

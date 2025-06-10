@@ -1,4 +1,4 @@
-package PBO_4C_SI_KELOMPOK_7.sistem_klinik_kemoterapi.controller;
+package PBO_4C_SI_KELOMPOK_7.controller;
 
 public class AuthController {
     

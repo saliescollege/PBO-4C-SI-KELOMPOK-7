@@ -1,4 +1,4 @@
-package view;
+package PBO_4C_SI_KELOMPOK_7.view; // <-- Menggunakan package yang sesuai
 
 import controller.PasienController;
 import model.Pasien;

@@ -1,5 +1,4 @@
-package controller;
-
+package PBO_4C_SI_KELOMPOK_7.controller;
 import db.DBConnection;
 import model.Pasien;
 

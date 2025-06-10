@@ -1,4 +1,4 @@
-package model;
+package PBO_4C_SI_KELOMPOK_7.model;
 
 public class User {
     public String username;

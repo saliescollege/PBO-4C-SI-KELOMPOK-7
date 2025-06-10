@@ -1,8 +1,8 @@
-package view;
+package PBO_4C_SI_KELOMPOK_7.view;
 
 import java.util.ArrayList;
 
-import model.User;
+import PBO_4C_SI_KELOMPOK_7.model.User;
 
 public class UserDatabase {
     // Jangan lupa deklarasi dan inisialisasi users
