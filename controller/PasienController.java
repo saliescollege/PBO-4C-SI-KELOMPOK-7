@@ -1,9 +1,12 @@
 package PBO_4C_SI_KELOMPOK_7.controller;
 
-import PBO_4C_SI_KELOMPOK_7.db.DBConnection; //
-import PBO_4C_SI_KELOMPOK_7.model.Pasien; //
+import PBO_4C_SI_KELOMPOK_7.db.DBConnection;
+import PBO_4C_SI_KELOMPOK_7.model.Pasien;
+import PBO_4C_SI_KELOMPOK_7.model.DokterJadwal; // Import new model
 
 import java.sql.*;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -134,65 +137,102 @@ public class PasienController {
     // READ - Ambil Detail Pasien berdasarkan ID (requires joining tables)
     public static Pasien getPasienById(int pasienId) {
         Pasien p = null;
-        // Joining all relevant tables to get complete patient data, including doctor name
         String sql = "SELECT p.pasien_id, p.nama_lengkap, p.alamat, p.no_telepon, p.tanggal_lahir, p.jenis_kelamin, p.dokter_id, " +
                      "d.nama AS dokter_nama, diag.diagnosa, diag.histopatologi, " +
                      "pf.tekanan_darah, pf.suhu_tubuh, pf.denyut_nadi, pf.berat_badan, pf.hb, pf.leukosit, pf.trombosit, pf.sgot_sgpt, pf.ureum_kreatinin, " +
-                     "rt.jenis_kemoterapi, rt.dosis, rt.siklus, rt.premedikasi, rt.akses_vena " +
+                     "rt.jenis_kemoterapi, rt.dosis, rt.siklus, rt.premedikasi, rt.akses_vena, rt.tanggal_dibuat " + // Added rt.tanggal_dibuat
                      "FROM pasien p " +
-                     "LEFT JOIN dokter d ON p.dokter_id = d.dokter_id " + // Join with dokter table
-                     "LEFT JOIN diagnosa diag ON p.pasien_id = diag.pasien_id " + // Alias diagnosa table
+                     "LEFT JOIN dokter d ON p.dokter_id = d.dokter_id " +
+                     "LEFT JOIN diagnosa diag ON p.pasien_id = diag.pasien_id " +
                      "LEFT JOIN periksa_fisik pf ON p.pasien_id = pf.pasien_id " +
                      "LEFT JOIN rencana_terapi rt ON p.pasien_id = rt.pasien_id " +
                      "WHERE p.pasien_id = ?";
 
-        try (Connection conn = DBConnection.connect(); //
-             PreparedStatement pstmt = conn.prepareStatement(sql)) { //
+        try (Connection conn = DBConnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setInt(1, pasienId); //
-            ResultSet rs = pstmt.executeQuery(); //
+            pstmt.setInt(1, pasienId);
+            ResultSet rs = pstmt.executeQuery();
 
-            if (rs.next()) { //
-                p = new Pasien(); //
-                p.setId(rs.getInt("pasien_id")); //
-                p.setNama(rs.getString("nama_lengkap")); //
-                p.setAlamat(rs.getString("alamat")); //
-                p.setTelepon(rs.getString("no_telepon")); //
-                p.setTanggalLahir(rs.getDate("tanggal_lahir").toLocalDate()); //
-                p.setKelamin(rs.getString("jenis_kelamin")); //
-                p.setDokterId(rs.getInt("dokter_id")); //
-                p.setPremedikasi(rs.getString("dokter_nama")); // Using premedikasi temporarily for doctor name in detail view
+            if (rs.next()) {
+                p = new Pasien();
+                p.setId(rs.getInt("pasien_id"));
+                p.setNama(rs.getString("nama_lengkap"));
+                p.setAlamat(rs.getString("alamat"));
+                p.setTelepon(rs.getString("no_telepon"));
+                p.setTanggalLahir(rs.getDate("tanggal_lahir").toLocalDate());
+                p.setKelamin(rs.getString("jenis_kelamin"));
+                p.setDokterId(rs.getInt("dokter_id"));
+                p.setDokterNama(rs.getString("dokter_nama"));
 
                 // Data from diagnosa table
-                p.setDiagnosa(rs.getString("diagnosa")); //
-                p.setHistopatologi(rs.getString("histopatologi")); //
+                p.setDiagnosa(rs.getString("diagnosa"));
+                p.setHistopatologi(rs.getString("histopatologi"));
 
                 // Data from periksa_fisik table
-                p.setTekananDarah(rs.getString("tekanan_darah")); //
-                p.setSuhuTubuh(rs.getString("suhu_tubuh")); //
-                p.setDenyutNadi(rs.getString("denyut_nadi")); //
-                p.setBeratBadan(rs.getString("berat_badan")); //
-                p.setHb(rs.getString("hb")); //
-                p.setLeukosit(rs.getString("leukosit")); //
-                p.setTrombosit(rs.getString("trombosit")); //
-                p.setFungsiHati(rs.getString("sgot_sgpt")); // Direct column name
-                p.setFungsiGinjal(rs.getString("ureum_kreatinin")); // Direct column name
+                p.setTekananDarah(rs.getString("tekanan_darah"));
+                p.setSuhuTubuh(rs.getString("suhu_tubuh"));
+                p.setDenyutNadi(rs.getString("denyut_nadi"));
+                p.setBeratBadan(rs.getString("berat_badan"));
+                p.setHb(rs.getString("hb"));
+                p.setLeukosit(rs.getString("leukosit"));
+                p.setTrombosit(rs.getString("trombosit"));
+                p.setFungsiHati(rs.getString("sgot_sgpt"));
+                p.setFungsiGinjal(rs.getString("ureum_kreatinin"));
 
                 // Data from rencana_terapi table
-                p.setJenisKemoterapi(rs.getString("jenis_kemoterapi")); //
-                p.setDosis(rs.getString("dosis")); //
-                p.setSiklus(rs.getString("siklus")); //
-                p.setPremedikasi(rs.getString("premedikasi")); // This will now store doctor name, original premedikasi will be lost unless a new field is added to model
-                p.setAksesVena(rs.getString("akses_vena")); //
+                p.setJenisKemoterapi(rs.getString("jenis_kemoterapi"));
+                p.setDosis(rs.getString("dosis"));
+                p.setSiklus(rs.getString("siklus"));
+                p.setPremedikasi(rs.getString("premedikasi"));
+                p.setAksesVena(rs.getString("akses_vena"));
+                // Added for scheduling logic
+                p.setTanggalDibuatRencanaTerapi(rs.getDate("tanggal_dibuat") != null ? rs.getDate("tanggal_dibuat").toLocalDate() : null);
             }
 
-        } catch (SQLException e) { //
-            System.err.println("Gagal mengambil detail pasien: " + e.getMessage()); //
-            e.printStackTrace(); //
+        } catch (SQLException e) {
+            System.err.println("Gagal mengambil detail pasien: " + e.getMessage());
+            e.printStackTrace();
         }
-        return p; //
+        return p;
     }
 
+    // NEW METHOD: Get Doctor's Schedule
+    public static List<DokterJadwal> getDokterSchedules(int dokterId) {
+        List<DokterJadwal> schedules = new ArrayList<>();
+        String sql = "SELECT jadwal_id, dokter_id, hari, jam_mulai, jam_selesai FROM jadwal_dokter WHERE dokter_id = ?";
+
+        try (Connection conn = DBConnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, dokterId);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                int jadwalId = rs.getInt("jadwal_id");
+                String hariStr = rs.getString("hari");
+                LocalTime jamMulai = rs.getTime("jam_mulai").toLocalTime();
+                LocalTime jamSelesai = rs.getTime("jam_selesai").toLocalTime();
+
+                // Convert String day to DayOfWeek enum
+                DayOfWeek dayOfWeek = null;
+                try {
+                    dayOfWeek = DayOfWeek.valueOf(hariStr.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    System.err.println("Invalid DayOfWeek string from DB: " + hariStr);
+                }
+
+                if (dayOfWeek != null) {
+                    schedules.add(new DokterJadwal(jadwalId, dokterId, dayOfWeek, jamMulai, jamSelesai));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Gagal mengambil jadwal dokter: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return schedules;
+    }
+    
     // NEW METHOD: Delete Pasien
     public static boolean deletePasien(int pasienId) {
         Connection conn = null;

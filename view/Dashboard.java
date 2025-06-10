@@ -32,20 +32,21 @@ public class Dashboard extends BaseFrame { // Mengubah dari JFrame menjadi BaseF
         });
 
         // Tombol Dokter
-        ImageIcon dokterIcon = new ImageIcon("src\\PBO_4C_SI_KELOMPOK_7\\assets\\Dokter.png"); // Mengambil gambar dokter
-        Image scaledDokterImg = dokterIcon.getImage().getScaledInstance(480, 270, Image.SCALE_SMOOTH); // Skala gambar
+        ImageIcon dokterIcon = new ImageIcon("src\\PBO_4C_SI_KELOMPOK_7\\assets\\Dokter.png");
+        Image scaledDokterImg = dokterIcon.getImage().getScaledInstance(480, 270, Image.SCALE_SMOOTH);
         JButton dokterBtn = new JButton("Dokter", new ImageIcon(scaledDokterImg));
-        dokterBtn.setHorizontalTextPosition(SwingConstants.CENTER); // Teks di tengah horizontal
-        dokterBtn.setVerticalTextPosition(SwingConstants.BOTTOM); // Teks di bawah ikon
-        dokterBtn.setFont(new Font("Arial", Font.BOLD, 16)); // Font tombol
-        dokterBtn.setPreferredSize(new Dimension(250, 250)); // Ukuran preferensi tombol (opsional)
+        dokterBtn.setHorizontalTextPosition(SwingConstants.CENTER);
+        dokterBtn.setVerticalTextPosition(SwingConstants.BOTTOM);
+        dokterBtn.setFont(new Font("Arial", Font.BOLD, 16));
+        dokterBtn.setPreferredSize(new Dimension(250, 250));
         dokterBtn.addActionListener(e -> {
-            // new DokterList(username).setVisible(true); // Jika ada DokterList yang ingin dibuka
-            JOptionPane.showMessageDialog(this, "Fitur Dokter akan segera ditambahkan.");
+            new DokterList(username).setVisible(true); // Open DokterList
+            // dispose(); // Uncomment if you want to close Dashboard when opening DokterList
         });
 
-        leftPanel.add(pasienBtn); // Menambahkan tombol pasien ke panel kiri
-        leftPanel.add(dokterBtn); // Menambahkan tombol dokter ke panel kiri
+        leftPanel.add(pasienBtn);
+        leftPanel.add(dokterBtn);
+
 
         // Panel kanan untuk tabel jadwal
         JPanel rightPanel = new JPanel(new BorderLayout());

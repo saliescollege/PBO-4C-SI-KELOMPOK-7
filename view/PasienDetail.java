@@ -2,14 +2,24 @@ package PBO_4C_SI_KELOMPOK_7.view;
 
 import PBO_4C_SI_KELOMPOK_7.controller.PasienController;
 import PBO_4C_SI_KELOMPOK_7.model.Pasien;
+import PBO_4C_SI_KELOMPOK_7.model.DokterJadwal; // Import DokterJadwal
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class PasienDetail extends BaseFrame {
 
-    private JTextPane detailTextPane; // Changed to JTextPane for rich text capabilities
+    private JTextPane detailTextPane;
+    private JTable scheduleTable; // Table for schedule
+    private DefaultTableModel scheduleTableModel; // Model for schedule table
     private int pasienId;
     private String username;
 
@@ -17,8 +27,8 @@ public class PasienDetail extends BaseFrame {
         super("Detail Pasien", username);
         this.pasienId = pasienId;
         this.username = username;
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Close only this window
-        setSize(800, 600); // Give more space for centering
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setSize(800, 700); // Increased height to accommodate schedule table
 
         Pasien pasien = PasienController.getPasienById(pasienId);
         if (pasien == null) {
@@ -30,56 +40,72 @@ public class PasienDetail extends BaseFrame {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Use JTextPane for document-like format and better font control
+        // Top Panel for Patient Details (HTML formatted)
+        JPanel detailPanel = new JPanel(new GridBagLayout());
+        detailPanel.setBackground(Color.WHITE);
+        detailPanel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+        
         detailTextPane = new JTextPane();
         detailTextPane.setEditable(false);
-        detailTextPane.setContentType("text/html"); // Allow HTML for better formatting/centering
+        detailTextPane.setContentType("text/html");
+        detailTextPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+        detailTextPane.setFont(new Font("SansSerif", Font.PLAIN, 12));
         
-        // Initial styling for the JTextPane
-        detailTextPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE); // Use setFont
-        detailTextPane.setFont(new Font("SansSerif", Font.PLAIN, 12)); // A proper, readable font
+        GridBagConstraints gbcTextPane = new GridBagConstraints();
+        gbcTextPane.insets = new Insets(15, 15, 15, 15);
+        gbcTextPane.fill = GridBagConstraints.BOTH;
+        gbcTextPane.weightx = 1.0;
+        gbcTextPane.weighty = 1.0;
+        detailPanel.add(detailTextPane, gbcTextPane);
+
+        JScrollPane detailScrollPane = new JScrollPane(detailPanel);
+        detailScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        detailScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        detailScrollPane.setBorder(BorderFactory.createEmptyBorder());
         
-        // This is a common way to simulate centering content within JTextPane
-        // by wrapping it in an HTML div with text-align: center
-        // However, for more precise "document" style, a fixed-width container with
-        // padding is often better than simply text-align: center on all content.
-        // Let's create a dedicated content panel that is centered.
+        // Add detail scroll pane to the top of mainPanel
+        mainPanel.add(detailScrollPane, BorderLayout.NORTH);
 
-        JPanel contentWrapperPanel = new JPanel(new GridBagLayout()); // Use GridBagLayout to center
-        contentWrapperPanel.setBackground(Color.WHITE); // White background for document feel
-        contentWrapperPanel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1)); // Subtle border
+
+        // Schedule Table Panel
+        JPanel schedulePanel = new JPanel(new BorderLayout());
+        schedulePanel.setBorder(BorderFactory.createTitledBorder("Jadwal Kemoterapi Direkomendasikan"));
+
+        scheduleTableModel = new DefaultTableModel(new Object[]{"Sesi Ke", "Tanggal", "Hari", "Jam Mulai", "Jam Selesai"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        scheduleTable = new JTable(scheduleTableModel);
+        scheduleTable.setFillsViewportHeight(true); // Make table fill available height
+        JScrollPane scheduleScrollPane = new JScrollPane(scheduleTable);
+        schedulePanel.add(scheduleScrollPane, BorderLayout.CENTER);
         
-        // Add the JTextPane to the wrapper panel
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(20, 20, 20, 20); // Inner padding for the "document"
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
-        contentWrapperPanel.add(detailTextPane, gbc);
-
-        JScrollPane scrollPane = new JScrollPane(contentWrapperPanel); // ScrollPane wraps the contentWrapper
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder()); // Remove default scroll pane border
-
-        mainPanel.add(scrollPane, BorderLayout.CENTER);
+        // Add schedule panel to the center of mainPanel
+        mainPanel.add(schedulePanel, BorderLayout.CENTER);
 
         // Populate text area with formatted data
         populateDetail(pasien);
+
+        // Generate and display schedule
+        List<DokterJadwal> dokterSchedules = PasienController.getDokterSchedules(pasien.getDokterId());
+        generateChemoSchedule(pasien, dokterSchedules);
 
         // Buttons Panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
 
         JButton btnEvaluasi = new JButton("Evaluasi Sesi");
         btnEvaluasi.addActionListener(e -> {
+            // Check if EvaluasiTambah needs specific patient context
+            // If it can take patient ID, you can do:
+            // new EvaluasiTambah(pasien.getNama(), pasien.getId()).setVisible(true);
+            // dispose(); // to close this window
             JOptionPane.showMessageDialog(this, "Fitur evaluasi untuk pasien ini akan segera ditambahkan.");
-            // To integrate with EvaluasiTambah, you would typically pass patient details:
-            // new EvaluasiTambah(pasien.getNama(), pasienId).setVisible(true); // Assuming EvaluasiTambah needs patient name and ID
-            // dispose(); // If you want to close PasienDetail when opening EvaluasiTambah
         });
 
         JButton btnHapus = new JButton("Hapus Pasien");
-        btnHapus.setBackground(new Color(220, 53, 69)); // Red for delete
+        btnHapus.setBackground(new Color(220, 53, 69));
         btnHapus.setForeground(Color.WHITE);
         btnHapus.addActionListener(e -> {
             int confirm = JOptionPane.showConfirmDialog(
@@ -93,7 +119,7 @@ public class PasienDetail extends BaseFrame {
             if (confirm == JOptionPane.YES_OPTION) {
                 if (PasienController.deletePasien(pasienId)) {
                     JOptionPane.showMessageDialog(this, "Data pasien berhasil dihapus.");
-                    new PasienList(username).setVisible(true); // Reopen/refresh list
+                    new PasienList(username).setVisible(true);
                     dispose();
                 } else {
                     JOptionPane.showMessageDialog(this, "Gagal menghapus data pasien.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -102,7 +128,7 @@ public class PasienDetail extends BaseFrame {
         });
 
         JButton btnTutup = new JButton("Tutup");
-        btnTutup.addActionListener(e -> dispose()); // Just close this window
+        btnTutup.addActionListener(e -> dispose());
 
         buttonPanel.add(btnEvaluasi);
         buttonPanel.add(btnHapus);
@@ -118,14 +144,13 @@ public class PasienDetail extends BaseFrame {
         StringBuilder sb = new StringBuilder();
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy");
 
-        // Using HTML for better formatting in JTextPane
-        sb.append("<html><body style='font-family: SansSerif; font-size: 12pt; margin: 15px; background-color: white;'>");
-        sb.append("<h2 style='text-align: center; color: #333;'>INFORMASI LENGKAP PASIEN</h2>");
-        sb.append("<hr style='border: 0.5px solid #ccc;'><br>");
+        sb.append("<html><body style='font-family: SansSerif; font-size: 10pt; margin: 0px; background-color: white;'>"); // Reduced font size to fit more
+        sb.append("<h3 style='text-align: center; color: #333; margin-bottom: 5px;'>INFORMASI LENGKAP PASIEN</h3>"); // Reduced heading size
+        sb.append("<hr style='border: 0.5px solid #ccc; margin-bottom: 10px;'><br>");
 
-        sb.append("<p><b>DATA PRIBADI:</b></p>");
-        sb.append("<table border='0' cellspacing='0' cellpadding='4'>");
-        sb.append(String.format("<tr><td width='150'>ID Pasien</td><td>: %d</td></tr>", p.getId()));
+        sb.append("<p style='font-weight: bold; margin-bottom: 3px;'>DATA PRIBADI:</p>");
+        sb.append("<table border='0' cellspacing='0' cellpadding='2' style='width:100%;'>"); // cellpadding reduced
+        sb.append(String.format("<tr><td width='120'>ID Pasien</td><td>: %d</td></tr>", p.getId()));
         sb.append(String.format("<tr><td>Nama Lengkap</td><td>: %s</td></tr>", p.getNama()));
         sb.append(String.format("<tr><td>Alamat</td><td>: %s</td></tr>", p.getAlamat()));
         sb.append(String.format("<tr><td>No. Telepon</td><td>: %s</td></tr>", p.getTelepon()));
@@ -134,15 +159,15 @@ public class PasienDetail extends BaseFrame {
         sb.append(String.format("<tr><td>Dokter PJ</td><td>: %s (ID: %d)</td></tr>", p.getDokterNama(), p.getDokterId()));
         sb.append("</table><br>");
 
-        sb.append("<p><b>DIAGNOSA:</b></p>");
-        sb.append("<table border='0' cellspacing='0' cellpadding='4'>");
-        sb.append(String.format("<tr><td width='150'>Diagnosa Utama</td><td>: %s</td></tr>", p.getDiagnosa() != null ? p.getDiagnosa() : "-"));
+        sb.append("<p style='font-weight: bold; margin-bottom: 3px;'>DIAGNOSA:</p>");
+        sb.append("<table border='0' cellspacing='0' cellpadding='2' style='width:100%;'>");
+        sb.append(String.format("<tr><td width='120'>Diagnosa Utama</td><td>: %s</td></tr>", p.getDiagnosa() != null ? p.getDiagnosa() : "-"));
         sb.append(String.format("<tr><td>Histopatologi</td><td>: %s</td></tr>", p.getHistopatologi() != null ? p.getHistopatologi() : "-"));
         sb.append("</table><br>");
 
-        sb.append("<p><b>PEMERIKSAAN FISIK & PENUNJANG:</b></p>");
-        sb.append("<table border='0' cellspacing='0' cellpadding='4'>");
-        sb.append(String.format("<tr><td width='150'>Tekanan Darah</td><td>: %s mmHg</td></tr>", p.getTekananDarah() != null ? p.getTekananDarah() : "-"));
+        sb.append("<p style='font-weight: bold; margin-bottom: 3px;'>PEMERIKSAAN FISIK & PENUNJANG:</p>");
+        sb.append("<table border='0' cellspacing='0' cellpadding='2' style='width:100%;'>");
+        sb.append(String.format("<tr><td width='120'>Tekanan Darah</td><td>: %s mmHg</td></tr>", p.getTekananDarah() != null ? p.getTekananDarah() : "-"));
         sb.append(String.format("<tr><td>Suhu Tubuh</td><td>: %s °C</td></tr>", p.getSuhuTubuh() != null ? p.getSuhuTubuh() : "-"));
         sb.append(String.format("<tr><td>Denyut Nadi</td><td>: %s bpm</td></tr>", p.getDenyutNadi() != null ? p.getDenyutNadi() : "-"));
         sb.append(String.format("<tr><td>Berat Badan</td><td>: %s kg</td></tr>", p.getBeratBadan() != null ? p.getBeratBadan() : "-"));
@@ -153,9 +178,9 @@ public class PasienDetail extends BaseFrame {
         sb.append(String.format("<tr><td>Fungsi Ginjal</td><td>: %s</td></tr>", p.getFungsiGinjal() != null ? p.getFungsiGinjal() : "-"));
         sb.append("</table><br>");
 
-        sb.append("<p><b>RENCANA TERAPI KEMOTERAPI:</b></p>");
-        sb.append("<table border='0' cellspacing='0' cellpadding='4'>");
-        sb.append(String.format("<tr><td width='150'>Jenis Kemoterapi</td><td>: %s</td></tr>", p.getJenisKemoterapi() != null ? p.getJenisKemoterapi() : "-"));
+        sb.append("<p style='font-weight: bold; margin-bottom: 3px;'>RENCANA TERAPI KEMOTERAPI:</p>");
+        sb.append("<table border='0' cellspacing='0' cellpadding='2' style='width:100%;'>");
+        sb.append(String.format("<tr><td width='120'>Jenis Kemoterapi</td><td>: %s</td></tr>", p.getJenisKemoterapi() != null ? p.getJenisKemoterapi() : "-"));
         sb.append(String.format("<tr><td>Dosis</td><td>: %s</td></tr>", p.getDosis() != null ? p.getDosis() : "-"));
         sb.append(String.format("<tr><td>Siklus</td><td>: %s</td></tr>", p.getSiklus() != null ? p.getSiklus() : "-"));
         sb.append(String.format("<tr><td>Premedikasi</td><td>: %s</td></tr>", p.getPremedikasi() != null ? p.getPremedikasi() : "-"));
@@ -165,6 +190,67 @@ public class PasienDetail extends BaseFrame {
         sb.append("</body></html>");
 
         detailTextPane.setText(sb.toString());
-        detailTextPane.setCaretPosition(0); // Scroll to top
+        detailTextPane.setCaretPosition(0);
+    }
+
+    private void generateChemoSchedule(Pasien pasien, List<DokterJadwal> dokterSchedules) {
+        scheduleTableModel.setRowCount(0); // Clear previous schedule
+
+        // Group doctor schedules by DayOfWeek for easier lookup
+        Map<DayOfWeek, List<DokterJadwal>> schedulesByDay = dokterSchedules.stream()
+                .collect(Collectors.groupingBy(DokterJadwal::getHari));
+
+        LocalDate startDate = pasien.getTanggalDibuatRencanaTerapi(); // Use date from rencana_terapi
+        if (startDate == null) {
+            JOptionPane.showMessageDialog(this, "Tanggal pembuatan rencana terapi tidak ditemukan. Tidak dapat membuat jadwal.");
+            return;
+        }
+
+        int cycle = 0;
+        try {
+            cycle = Integer.parseInt(pasien.getSiklus()); // Get cycle from Pasien object
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Format siklus terapi tidak valid. Tidak dapat membuat jadwal.");
+            return;
+        }
+
+        if (cycle <= 0) {
+            JOptionPane.showMessageDialog(this, "Siklus terapi harus lebih dari 0. Tidak dapat membuat jadwal.");
+            return;
+        }
+
+        LocalDate currentScheduleDate = startDate;
+        int sesiKe = 1;
+        final int MAX_SESSIONS = 10; // Generate up to 10 future sessions
+
+        DateTimeFormatter displayDateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        DateTimeFormatter displayDayFormatter = DateTimeFormatter.ofPattern("EEEE"); // For Indonesian day names
+
+        while (sesiKe <= MAX_SESSIONS) {
+            DayOfWeek dayOfWeek = currentScheduleDate.getDayOfWeek();
+            List<DokterJadwal> availableSlots = schedulesByDay.get(dayOfWeek);
+
+            if (availableSlots != null && !availableSlots.isEmpty()) {
+                // Assuming the first available slot for that day is taken
+                DokterJadwal slot = availableSlots.get(0); // Take the first available slot for the day
+                
+                scheduleTableModel.addRow(new Object[]{
+                    sesiKe,
+                    currentScheduleDate.format(displayDateFormatter),
+                    currentScheduleDate.format(displayDayFormatter), // Display day name (e.g., Senin)
+                    slot.getJamMulai().format(DateTimeFormatter.ofPattern("HH:mm")),
+                    slot.getJamSelesai().format(DateTimeFormatter.ofPattern("HH:mm"))
+                });
+                sesiKe++;
+            } else {
+                // If no schedule for this day, try the next date in the cycle
+                // (or you might want to skip this session or find the next available day)
+                // For simplicity, we just move to the next cycle date.
+            }
+
+            // Move to the next cycle date (e.g., +2 weeks for a siklus 2)
+            // Assuming 'siklus' value represents the interval in weeks
+            currentScheduleDate = currentScheduleDate.plusWeeks(cycle); // Adjust based on your 'siklus' interpretation
+        }
     }
 }

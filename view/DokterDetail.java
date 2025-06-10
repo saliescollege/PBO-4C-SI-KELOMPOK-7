@@ -1,54 +1,113 @@
-package PBO_4C_SI_KELOMPOK_7.view; // <-- Menggunakan package yang sesuai
+// PBO_4C_SI_KELOMPOK_7/view/DokterDetail.java
+package PBO_4C_SI_KELOMPOK_7.view;
+
+import PBO_4C_SI_KELOMPOK_7.controller.DokterController;
+import PBO_4C_SI_KELOMPOK_7.model.Dokter;
+
 import javax.swing.*;
 import java.awt.*;
+import java.util.List; // Import List
 
-public class DokterDetail extends BaseFrame { // <-- Mengubah dari JFrame menjadi BaseFrame
+public class DokterDetail extends BaseFrame {
 
-    // PERUBAHAN: Konstruktor sekarang menerima username
-    public DokterDetail(String nama, String spesialisasi, String ruangan, String jadwal, String username) {
-        super("Detail Dokter", username); // <-- Panggil konstruktor BaseFrame
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Tetap DISPOSE_ON_CLOSE untuk jendela detail
+    private JTextPane detailTextPane; // Changed to JTextPane for rich text capabilities
+    private int dokterId;
 
-        // Hapus kode navbar yang sebelumnya ada di sini karena sudah ditangani oleh BaseFrame.
+    // Modified: Constructor now accepts dokterId instead of individual fields
+    public DokterDetail(int dokterId, String username) {
+        super("Detail Dokter", username);
+        this.dokterId = dokterId;
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Close only this window
+        setSize(800, 600); // Give more space for centering
 
-        String[][] data = {
-            {"Nama", nama},
-            {"Spesialisasi", spesialisasi},
-            {"Ruangan", ruangan},
-            {"Jadwal", jadwal},
-            {"Pendidikan", "Universitas Kedokteran Indonesia"},
-            {"Legalitas", "STR aktif, SIP No. 123456789"}
-        };
+        Dokter dokter = DokterController.getDokterById(dokterId);
+        if (dokter == null) {
+            JOptionPane.showMessageDialog(this, "Data dokter tidak ditemukan.");
+            dispose();
+            return;
+        }
 
-        String[] kolom = {"Keterangan", "Detail"};
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JTable detailTable = new JTable(data, kolom) {
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
+        detailTextPane = new JTextPane();
+        detailTextPane.setEditable(false);
+        detailTextPane.setContentType("text/html");
+        detailTextPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+        detailTextPane.setFont(new Font("SansSerif", Font.PLAIN, 12));
 
-        detailTable.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        detailTable.setRowHeight(28);
-        detailTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
+        JPanel contentWrapperPanel = new JPanel(new GridBagLayout());
+        contentWrapperPanel.setBackground(Color.WHITE);
+        contentWrapperPanel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(20, 20, 20, 20);
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        contentWrapperPanel.add(detailTextPane, gbc);
 
-        JScrollPane scrollPane = new JScrollPane(detailTable);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
-        add(scrollPane, BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(contentWrapperPanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
 
-        JButton pasienBtn = new JButton("Pasien yang Ditangani");
-        pasienBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        pasienBtn.setBackground(new Color(100, 149, 237));
-        pasienBtn.setForeground(Color.WHITE);
-        pasienBtn.setFocusPainted(false);
-        pasienBtn.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                "Fitur menampilkan pasien akan ditambahkan."));
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
 
-        JPanel tombolPanel = new JPanel();
-        tombolPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
-        tombolPanel.add(pasienBtn);
-        add(tombolPanel, BorderLayout.SOUTH);
+        populateDetail(dokter); // Populate using the Dokter object
 
+        JButton pasienDitanganiBtn = new JButton("Pasien yang Ditangani");
+        pasienDitanganiBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        pasienDitanganiBtn.setBackground(new Color(100, 149, 237));
+        pasienDitanganiBtn.setForeground(Color.WHITE);
+        pasienDitanganiBtn.setFocusPainted(false);
+        pasienDitanganiBtn.addActionListener(e -> {
+            // Placeholder for "Pasien yang Ditangani" functionality
+            // You would likely pass the dokterId to a new PasienDitangani view
+            JOptionPane.showMessageDialog(this, "Menampilkan daftar pasien yang ditangani oleh " + dokter.getNama() + " (ID: " + dokter.getId() + ")");
+            // Example: new PasienDitangani(dokter.getId(), username).setVisible(true);
+        });
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
+        buttonPanel.add(pasienDitanganiBtn);
+        add(buttonPanel, BorderLayout.SOUTH);
+
+        add(mainPanel);
         setVisible(true);
+    }
+
+    private void populateDetail(Dokter d) {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("<html><body style='font-family: SansSerif; font-size: 12pt; margin: 15px; background-color: white;'>");
+        sb.append("<h2 style='text-align: center; color: #333;'>INFORMASI LENGKAP DOKTER</h2>");
+        sb.append("<hr style='border: 0.5px solid #ccc;'><br>");
+
+        sb.append("<p><b>DATA DOKTER:</b></p>");
+        sb.append("<table border='0' cellspacing='0' cellpadding='4'>");
+        sb.append(String.format("<tr><td width='150'>ID Dokter</td><td>: %d</td></tr>", d.getId()));
+        sb.append(String.format("<tr><td>Nama Lengkap</td><td>: %s</td></tr>", d.getNama()));
+        sb.append(String.format("<tr><td>Spesialisasi</td><td>: %s</td></tr>", d.getSpesialisasi()));
+        sb.append(String.format("<tr><td>Pendidikan</td><td>: %s</td></tr>", d.getPendidikan()));
+        sb.append(String.format("<tr><td>Legalitas</td><td>: %s</td></tr>", d.getLegalitas()));
+        sb.append("</table><br>");
+
+        sb.append("<p><b>JADWAL DOKTER:</b></p>");
+        sb.append("<table border='0' cellspacing='0' cellpadding='4'>");
+        List<String> schedules = d.getJadwal();
+        if (schedules.isEmpty()) {
+            sb.append("<tr><td colspan='2'>Tidak ada jadwal tersedia.</td></tr>");
+        } else {
+            for (String schedule : schedules) {
+                sb.append(String.format("<tr><td width='150'></td><td>%s</td></tr>", schedule));
+            }
+        }
+        sb.append("</table><br>");
+        
+        sb.append("</body></html>");
+
+        detailTextPane.setText(sb.toString());
+        detailTextPane.setCaretPosition(0); // Scroll to top
     }
 }

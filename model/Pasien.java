@@ -33,6 +33,7 @@ public class Pasien {
     private int dokterId;
 
     private String dokterNama;
+    private LocalDate tanggalDibuatRencanaTerapi;
 
     // --- GETTERS & SETTERS ---
 
@@ -226,5 +227,13 @@ public class Pasien {
 
     public void setDokterNama(String dokterNama) {
         this.dokterNama = dokterNama;
+    }
+
+    public LocalDate getTanggalDibuatRencanaTerapi() {
+        return tanggalDibuatRencanaTerapi;
+    }
+
+    public void setTanggalDibuatRencanaTerapi(LocalDate tanggalDibuatRencanaTerapi) {
+        this.tanggalDibuatRencanaTerapi = tanggalDibuatRencanaTerapi;
     }
 }
