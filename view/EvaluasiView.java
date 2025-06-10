@@ -1,6 +1,6 @@
 package PBO_4C_SI_KELOMPOK_7.view; // Use the correct package name 
 
-import db.DBConnection; // Import your DBConnection class
+import PBO_4C_SI_KELOMPOK_7.db.DBConnection; // Import your DBConnection class
 import java.awt.*;
 import java.sql.*;
 import javax.swing.*;

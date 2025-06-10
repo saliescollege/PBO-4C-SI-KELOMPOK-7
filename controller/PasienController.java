@@ -1,6 +1,6 @@
 package PBO_4C_SI_KELOMPOK_7.controller;
-import db.DBConnection;
-import model.Pasien;
+import PBO_4C_SI_KELOMPOK_7.db.DBConnection;
+import PBO_4C_SI_KELOMPOK_7.model.Pasien;
 
 import java.sql.*;
 import java.util.ArrayList;

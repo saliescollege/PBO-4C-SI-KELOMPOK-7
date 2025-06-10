@@ -5,7 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
 
-import db.DBConnection;
+import PBO_4C_SI_KELOMPOK_7.db.DBConnection;
 
 public class Profile extends BaseFrame { // <-- Mengubah dari JFrame menjadi BaseFrame
     private JTextField namaField, emailField, phoneField;

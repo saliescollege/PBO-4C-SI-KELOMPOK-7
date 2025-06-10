@@ -1,8 +1,8 @@
-package PBO_4C_SI_KELOMPOK_7.view; // Menggunakan package yang sesuai
+package PBO_4C_SI_KELOMPOK_7.view;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import db.DBConnection;
+import PBO_4C_SI_KELOMPOK_7.db.DBConnection;
 import java.awt.*;
 import java.sql.*;
 import java.text.SimpleDateFormat;

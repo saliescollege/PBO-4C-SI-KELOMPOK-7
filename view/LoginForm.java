@@ -6,7 +6,7 @@ import java.awt.event.*;
 import java.sql.*;
 import java.security.*;
 
-import view.Dashboard;
+import PBO_4C_SI_KELOMPOK_7.view.Dashboard;
 
 public class LoginForm extends JFrame {
     private JTextField usernameField;

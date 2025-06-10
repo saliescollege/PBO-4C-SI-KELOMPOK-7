@@ -1,7 +1,7 @@
 package PBO_4C_SI_KELOMPOK_7.view; // <-- Menggunakan package yang sesuai
 
-import controller.PasienController;
-import model.Pasien;
+import PBO_4C_SI_KELOMPOK_7.controller.PasienController;
+import PBO_4C_SI_KELOMPOK_7.model.Pasien;
 
 import javax.swing.*;
 import java.awt.*;
