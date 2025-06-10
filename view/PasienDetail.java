@@ -1,8 +1,9 @@
+// File: PBO_4C_SI_KELOMPOK_7/view/PasienDetail.java
 package PBO_4C_SI_KELOMPOK_7.view;
 
 import PBO_4C_SI_KELOMPOK_7.controller.PasienController;
 import PBO_4C_SI_KELOMPOK_7.model.Pasien;
-import PBO_4C_SI_KELOMPOK_7.model.DokterJadwal; // Import DokterJadwal
+import PBO_4C_SI_KELOMPOK_7.model.DokterJadwal;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -18,8 +19,8 @@ import java.util.stream.Collectors;
 public class PasienDetail extends BaseFrame {
 
     private JTextPane detailTextPane;
-    private JTable scheduleTable; // Table for schedule
-    private DefaultTableModel scheduleTableModel; // Model for schedule table
+    private JTable scheduleTable;
+    private DefaultTableModel scheduleTableModel;
     private int pasienId;
     private String username;
 
@@ -28,7 +29,7 @@ public class PasienDetail extends BaseFrame {
         this.pasienId = pasienId;
         this.username = username;
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(800, 700); // Increased height to accommodate schedule table
+        setSize(800, 700);
 
         Pasien pasien = PasienController.getPasienById(pasienId);
         if (pasien == null) {
@@ -63,7 +64,6 @@ public class PasienDetail extends BaseFrame {
         detailScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         detailScrollPane.setBorder(BorderFactory.createEmptyBorder());
         
-        // Add detail scroll pane to the top of mainPanel
         mainPanel.add(detailScrollPane, BorderLayout.NORTH);
 
 
@@ -78,11 +78,10 @@ public class PasienDetail extends BaseFrame {
             }
         };
         scheduleTable = new JTable(scheduleTableModel);
-        scheduleTable.setFillsViewportHeight(true); // Make table fill available height
+        scheduleTable.setFillsViewportHeight(true);
         JScrollPane scheduleScrollPane = new JScrollPane(scheduleTable);
         schedulePanel.add(scheduleScrollPane, BorderLayout.CENTER);
         
-        // Add schedule panel to the center of mainPanel
         mainPanel.add(schedulePanel, BorderLayout.CENTER);
 
         // Populate text area with formatted data
@@ -97,11 +96,10 @@ public class PasienDetail extends BaseFrame {
 
         JButton btnEvaluasi = new JButton("Evaluasi Sesi");
         btnEvaluasi.addActionListener(e -> {
-            // Check if EvaluasiTambah needs specific patient context
-            // If it can take patient ID, you can do:
-            // new EvaluasiTambah(pasien.getNama(), pasien.getId()).setVisible(true);
-            // dispose(); // to close this window
-            JOptionPane.showMessageDialog(this, "Fitur evaluasi untuk pasien ini akan segera ditambahkan.");
+            // Open EvaluasiTambah, passing patient ID and name
+            new EvaluasiTambah(pasien.getId(), pasien.getNama()).setVisible(true); // Pass patient ID and name
+            // No need to dispose PasienDetail immediately, allow user to return
+            // dispose(); // Uncomment if you want to close this window
         });
 
         JButton btnHapus = new JButton("Hapus Pasien");
@@ -144,12 +142,12 @@ public class PasienDetail extends BaseFrame {
         StringBuilder sb = new StringBuilder();
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy");
 
-        sb.append("<html><body style='font-family: SansSerif; font-size: 10pt; margin: 0px; background-color: white;'>"); // Reduced font size to fit more
-        sb.append("<h3 style='text-align: center; color: #333; margin-bottom: 5px;'>INFORMASI LENGKAP PASIEN</h3>"); // Reduced heading size
+        sb.append("<html><body style='font-family: SansSerif; font-size: 10pt; margin: 0px; background-color: white;'>");
+        sb.append("<h3 style='text-align: center; color: #333; margin-bottom: 5px;'>INFORMASI LENGKAP PASIEN</h3>");
         sb.append("<hr style='border: 0.5px solid #ccc; margin-bottom: 10px;'><br>");
 
         sb.append("<p style='font-weight: bold; margin-bottom: 3px;'>DATA PRIBADI:</p>");
-        sb.append("<table border='0' cellspacing='0' cellpadding='2' style='width:100%;'>"); // cellpadding reduced
+        sb.append("<table border='0' cellspacing='0' cellpadding='2' style='width:100%;'>");
         sb.append(String.format("<tr><td width='120'>ID Pasien</td><td>: %d</td></tr>", p.getId()));
         sb.append(String.format("<tr><td>Nama Lengkap</td><td>: %s</td></tr>", p.getNama()));
         sb.append(String.format("<tr><td>Alamat</td><td>: %s</td></tr>", p.getAlamat()));
@@ -200,22 +198,24 @@ public class PasienDetail extends BaseFrame {
         Map<DayOfWeek, List<DokterJadwal>> schedulesByDay = dokterSchedules.stream()
                 .collect(Collectors.groupingBy(DokterJadwal::getHari));
 
-        LocalDate startDate = pasien.getTanggalDibuatRencanaTerapi(); // Use date from rencana_terapi
+        // Get the initial date for the first session from the database (tanggal_dibuat from rencana_terapi)
+        LocalDate startDate = pasien.getTanggalDibuatRencanaTerapi();
         if (startDate == null) {
-            JOptionPane.showMessageDialog(this, "Tanggal pembuatan rencana terapi tidak ditemukan. Tidak dapat membuat jadwal.");
+            JOptionPane.showMessageDialog(this, "Tanggal pembuatan rencana terapi tidak ditemukan. Tidak dapat membuat jadwal.", "Informasi", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
-        int cycle = 0;
+        int cycle;
         try {
-            cycle = Integer.parseInt(pasien.getSiklus()); // Get cycle from Pasien object
+            // Assuming siklus in Pasien model is the interval in weeks
+            cycle = Integer.parseInt(pasien.getSiklus());
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Format siklus terapi tidak valid. Tidak dapat membuat jadwal.");
+            JOptionPane.showMessageDialog(this, "Format siklus terapi tidak valid. Tidak dapat membuat jadwal.", "Informasi", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
         if (cycle <= 0) {
-            JOptionPane.showMessageDialog(this, "Siklus terapi harus lebih dari 0. Tidak dapat membuat jadwal.");
+            JOptionPane.showMessageDialog(this, "Siklus terapi harus lebih dari 0. Tidak dapat membuat jadwal.", "Informasi", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
@@ -237,20 +237,18 @@ public class PasienDetail extends BaseFrame {
                 scheduleTableModel.addRow(new Object[]{
                     sesiKe,
                     currentScheduleDate.format(displayDateFormatter),
-                    currentScheduleDate.format(displayDayFormatter), // Display day name (e.g., Senin)
+                    currentScheduleDate.format(displayDayFormatter),
                     slot.getJamMulai().format(DateTimeFormatter.ofPattern("HH:mm")),
                     slot.getJamSelesai().format(DateTimeFormatter.ofPattern("HH:mm"))
                 });
                 sesiKe++;
             } else {
                 // If no schedule for this day, try the next date in the cycle
-                // (or you might want to skip this session or find the next available day)
-                // For simplicity, we just move to the next cycle date.
+                // For simplicity, we just move to the next cycle date even if no slot found for current day
             }
 
             // Move to the next cycle date (e.g., +2 weeks for a siklus 2)
-            // Assuming 'siklus' value represents the interval in weeks
-            currentScheduleDate = currentScheduleDate.plusWeeks(cycle); // Adjust based on your 'siklus' interpretation
+            currentScheduleDate = currentScheduleDate.plusWeeks(cycle);
         }
     }
 }

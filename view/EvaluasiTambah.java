@@ -1,6 +1,7 @@
-package PBO_4C_SI_KELOMPOK_7.view; // Use the correct package name
+// File: PBO_4C_SI_KELOMPOK_7/view/EvaluasiTambah.java
+package PBO_4C_SI_KELOMPOK_7.view;
 
-import PBO_4C_SI_KELOMPOK_7.db.DBConnection; // Import your DBConnection class
+import PBO_4C_SI_KELOMPOK_7.db.DBConnection;
 import java.awt.*;
 import java.sql.*;
 import java.text.ParseException;
@@ -11,15 +12,24 @@ import javax.swing.*;
 
 public class EvaluasiTambah extends JFrame {
     private EvaluasiSesiKemoPanel evaluasiPanel;
+    private int pasienId; // Store patient ID
+    private String pasienNama; // Store patient name
     
-    public EvaluasiTambah() {
+    public EvaluasiTambah(int pasienId, String pasienNama) { // Modified constructor
+        this.pasienId = pasienId;
+        this.pasienNama = pasienNama;
+
         setTitle("Form Evaluasi Sesi Kemoterapi");
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Close only this window
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setSize(600, 700);
         setLocationRelativeTo(null);
 
         evaluasiPanel = new EvaluasiSesiKemoPanel();
         add(evaluasiPanel);
+
+        // Pre-fill patient name
+        evaluasiPanel.namaPasien.setText(this.pasienNama);
+        evaluasiPanel.namaPasien.setEditable(false); // Make it non-editable
 
         evaluasiPanel.submitButton.addActionListener(e -> {
             if (validasiInput(evaluasiPanel)) {
@@ -29,9 +39,14 @@ public class EvaluasiTambah extends JFrame {
 
         setVisible(true);
     }
+    
+    // Original constructor (if needed for testing or other entry points, can be kept)
+    public EvaluasiTambah() {
+        this(-1, ""); // Call the main constructor with default values
+    }
 
     private boolean validasiInput(EvaluasiSesiKemoPanel panel) {
-        // Validasi nama pasien
+        // Validasi nama pasien (already pre-filled, so minimal check needed)
         if (panel.namaPasien.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Nama pasien harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
             panel.namaPasien.requestFocus();
@@ -262,69 +277,74 @@ public class EvaluasiTambah extends JFrame {
 
         try {
             conn = DBConnection.connect();
-            if (conn != null) {
-                // First, try to find a matching jadwal_terapi. This is a simplified approach.
-                // In a real application, you'd likely select the jadwal_id based on more precise criteria
-                // like pasien_id, tanggal_terapi, sesi_ke.
-                String findJadwalSql = "SELECT jadwal_id FROM jadwal_terapi WHERE sesi_ke = ? AND DATE_FORMAT(tanggal_terapi, '%d-%m-%Y') = ?";
-                pstmt = conn.prepareStatement(findJadwalSql);
-                pstmt.setInt(1, Integer.parseInt(panel.sesiKe.getText()));
-                pstmt.setString(2, panel.tanggalSesi.getText());
-                rs = pstmt.executeQuery();
+            if (conn == null) {
+                throw new SQLException("Failed to connect to database.");
+            }
+            
+            // NEW LOGIC: Find a matching jadwal_terapi based on pasienId, sesiKe, and tanggalSesi
+            String findJadwalSql = "SELECT jt.jadwal_id FROM jadwal_terapi jt " +
+                                   "JOIN rencana_terapi rt ON jt.terapi_id = rt.terapi_id " +
+                                   "WHERE rt.pasien_id = ? AND jt.sesi_ke = ? AND DATE_FORMAT(jt.tanggal_terapi, '%d-%m-%Y') = ?";
+            pstmt = conn.prepareStatement(findJadwalSql);
+            pstmt.setInt(1, this.pasienId); // Use the stored pasienId
+            pstmt.setInt(2, Integer.parseInt(panel.sesiKe.getText()));
+            pstmt.setString(3, panel.tanggalSesi.getText()); // Use the formatted date string
+            rs = pstmt.executeQuery();
 
-                int jadwalId = -1;
-                if (rs.next()) {
-                    jadwalId = rs.getInt("jadwal_id");
-                } else {
-                    JOptionPane.showMessageDialog(this, "Jadwal terapi tidak ditemukan. Pastikan 'Sesi ke' dan 'Tanggal Sesi' benar.", "Error Database", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
+            int jadwalId = -1;
+            if (rs.next()) {
+                jadwalId = rs.getInt("jadwal_id");
+            } else {
+                JOptionPane.showMessageDialog(this, 
+                    "Jadwal terapi tidak ditemukan untuk pasien ini pada sesi dan tanggal yang ditentukan.\n" +
+                    "Pastikan 'Sesi ke' dan 'Tanggal Sesi' sesuai dengan jadwal yang telah ada.", 
+                    "Error Database", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-                // Prepare the SQL insert statement for evaluasi_kemo
-                String sql = "INSERT INTO evaluasi_kemo (jadwal_id, kondisi_post_terapi, efek_samping, catatan, tanggal_evaluasi) VALUES (?, ?, ?, ?, NOW())";
-                pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            // Prepare the SQL insert statement for evaluasi_kemo
+            String sql = "INSERT INTO evaluasi_kemo (jadwal_id, kondisi_post_terapi, efek_samping, catatan, tanggal_evaluasi) VALUES (?, ?, ?, ?, NOW())";
+            pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 
-                // Assuming 'kondisi_post_terapi' will combine several physical conditions for simplicity
-                String kondisiPostTerapi = "Tekanan Darah: " + panel.tekananDarahSesi.getText() + " mmHg, " +
-                                           "Suhu Tubuh: " + panel.suhuTubuhSesi.getText() + " °C, " +
-                                           "Denyut Nadi: " + panel.nadiSesi.getText() + " bpm, " +
-                                           "Saturasi Oksigen: " + panel.saturasiOksigen.getText() + " %";
+            // Assuming 'kondisi_post_terapi' will combine several physical conditions for simplicity
+            String kondisiPostTerapi = "Tekanan Darah: " + panel.tekananDarahSesi.getText() + " mmHg, " +
+                                       "Suhu Tubuh: " + panel.suhuTubuhSesi.getText() + " °C, " +
+                                       "Denyut Nadi: " + panel.nadiSesi.getText() + " bpm, " +
+                                       "Saturasi Oksigen: " + panel.saturasiOksigen.getText() + " %";
 
-                // Assuming 'efek_samping' will combine all side effects
-                String efekSamping = "Mual/Muntah: " + panel.mualMuntah.getSelectedItem() + ", " +
-                                     "Kelelahan: " + panel.kelelahan.getSelectedItem() + ", " +
-                                     "Demam: " + panel.demam.getSelectedItem() + ", " +
-                                     "Diare: " + panel.diare.getSelectedItem() + ", " +
-                                     "Gangguan Nafsu Makan: " + panel.nafsuMakan.getSelectedItem() + ", " +
-                                     "Nyeri/Sakit: " + panel.nyeri.getSelectedItem() + ", " +
-                                     "Lain-lain: " + panel.efekSampingLain.getText();
-                
-                // Assuming 'catatan' will combine complications and special notes
-                String catatan = "Komplikasi: " + panel.komplikasi.getText() + "\n" +
-                                 "Catatan Khusus: " + panel.catatanKhusus.getText() + "\n" +
-                                 "Toleransi Pasien: " + panel.toleransiPasien.getSelectedItem() + "\n" +
-                                 "Kondisi Psikologis: " + panel.kondisiPsikologis.getSelectedItem() + "\n" +
-                                 "Perubahan Dosis: " + panel.perubahanDosis.getSelectedItem() + "\n" +
-                                 "Jadwal Sesi Berikutnya: " + panel.sesiBerikutnya.getText() + "\n" +
-                                 "Obat Pendukung: " + panel.obatPendukung.getText() + "\n" +
-                                 "Perawatan Khusus: " + panel.perawatanKhusus.getText() + "\n" +
-                                 "Petugas Evaluator: " + panel.petugasEvaluator.getText();
+            // Assuming 'efek_samping' will combine all side effects
+            String efekSamping = "Mual/Muntah: " + panel.mualMuntah.getSelectedItem() + ", " +
+                                 "Kelelahan: " + panel.kelelahan.getSelectedItem() + ", " +
+                                 "Demam: " + panel.demam.getSelectedItem() + ", " +
+                                 "Diare: " + panel.diare.getSelectedItem() + ", " +
+                                 "Gangguan Nafsu Makan: " + panel.nafsuMakan.getSelectedItem() + ", " +
+                                 "Nyeri/Sakit: " + panel.nyeri.getSelectedItem() + ", " +
+                                 "Lain-lain: " + panel.efekSampingLain.getText();
+            
+            // Assuming 'catatan' will combine complications and special notes
+            String catatan = "Komplikasi: " + panel.komplikasi.getText() + "\n" +
+                             "Catatan Khusus: " + panel.catatanKhusus.getText() + "\n" +
+                             "Toleransi Pasien: " + panel.toleransiPasien.getSelectedItem() + "\n" +
+                             "Kondisi Psikologis: " + panel.kondisiPsikologis.getSelectedItem() + "\n" +
+                             "Perubahan Dosis: " + panel.perubahanDosis.getSelectedItem() + "\n" +
+                             "Jadwal Sesi Berikutnya: " + panel.sesiBerikutnya.getText() + "\n" +
+                             "Obat Pendukung: " + panel.obatPendukung.getText() + "\n" +
+                             "Perawatan Khusus: " + panel.perawatanKhusus.getText() + "\n" +
+                             "Petugas Evaluator: " + panel.petugasEvaluator.getText();
 
-                pstmt.setInt(1, jadwalId);
-                pstmt.setString(2, kondisiPostTerapi);
-                pstmt.setString(3, efekSamping);
-                pstmt.setString(4, catatan);
+            pstmt.setInt(1, jadwalId);
+            pstmt.setString(2, kondisiPostTerapi);
+            pstmt.setString(3, efekSamping);
+            pstmt.setString(4, catatan);
 
-                int rowsAffected = pstmt.executeUpdate();
+            int rowsAffected = pstmt.executeUpdate();
 
-                if (rowsAffected > 0) {
-                    JOptionPane.showMessageDialog(this, "Data evaluasi berhasil disimpan!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
-                    // Optionally, clear the form or open the view window
-                    dispose(); // Close the input form
-                    new EvaluasiView(); // Open the view to show all evaluations
-                } else {
-                    JOptionPane.showMessageDialog(this, "Gagal menyimpan data evaluasi.", "Error Database", JOptionPane.ERROR_MESSAGE);
-                }
+            if (rowsAffected > 0) {
+                JOptionPane.showMessageDialog(this, "Data evaluasi berhasil disimpan!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                dispose(); // Close the input form
+                new EvaluasiView(); // Open the view to show all evaluations
+            } else {
+                JOptionPane.showMessageDialog(this, "Gagal menyimpan data evaluasi.", "Error Database", JOptionPane.ERROR_MESSAGE);
             }
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error database: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
