@@ -38,7 +38,7 @@ public abstract class BaseFrame extends JFrame {
         JPanel leftNavContent = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0)); // FlowLayout.LEFT untuk posisi kiri
         leftNavContent.setOpaque(false); // Buat transparan agar latar belakang gradien terlihat
 
-        ImageIcon logoIcon = new ImageIcon("assets/Logo-Klinik.png"); // Pastikan path gambar benar
+        ImageIcon logoIcon = new ImageIcon("src\\PBO_4C_SI_KELOMPOK_7\\assets\\Logo_Klinik.png"); // Pastikan path gambar benar
         Image scaledLogo = logoIcon.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
         JLabel logo = new JLabel(new ImageIcon(scaledLogo));
         logo.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 0)); // Padding kiri untuk logo

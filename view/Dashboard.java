@@ -19,7 +19,7 @@ public class Dashboard extends BaseFrame { // Mengubah dari JFrame menjadi BaseF
         leftPanel.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10)); // Border padding
 
         // Tombol Pasien
-        ImageIcon pasienIcon = new ImageIcon("assets/Pasien.png"); // Mengambil gambar pasien
+        ImageIcon pasienIcon = new ImageIcon("src\\PBO_4C_SI_KELOMPOK_7\\assets\\Pasien.png"); // Mengambil gambar pasien
         Image scaledPasienImg = pasienIcon.getImage().getScaledInstance(480, 270, Image.SCALE_SMOOTH); // Skala gambar
         JButton pasienBtn = new JButton("Pasien", new ImageIcon(scaledPasienImg));
         pasienBtn.setHorizontalTextPosition(SwingConstants.CENTER); // Teks di tengah horizontal
@@ -32,7 +32,7 @@ public class Dashboard extends BaseFrame { // Mengubah dari JFrame menjadi BaseF
         });
 
         // Tombol Dokter
-        ImageIcon dokterIcon = new ImageIcon("assets/Dokter.png"); // Mengambil gambar dokter
+        ImageIcon dokterIcon = new ImageIcon("src\\PBO_4C_SI_KELOMPOK_7\\assets\\Dokter.png"); // Mengambil gambar dokter
         Image scaledDokterImg = dokterIcon.getImage().getScaledInstance(480, 270, Image.SCALE_SMOOTH); // Skala gambar
         JButton dokterBtn = new JButton("Dokter", new ImageIcon(scaledDokterImg));
         dokterBtn.setHorizontalTextPosition(SwingConstants.CENTER); // Teks di tengah horizontal
