@@ -1,644 +1,156 @@
-// File: PBO_4C_SI_KELOMPOK_7/view/EvaluasiTambah.java
 package PBO_4C_SI_KELOMPOK_7.view;
 
 import PBO_4C_SI_KELOMPOK_7.db.DBConnection;
 import java.awt.*;
 import java.sql.*;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
 import javax.swing.*;
 
 public class EvaluasiTambah extends JFrame {
-    private EvaluasiSesiKemoPanel evaluasiPanel;
-    private int pasienId; // Store patient ID
-    private String pasienNama; // Store patient name
-    
-    public EvaluasiTambah(int pasienId, String pasienNama) { // Modified constructor
-        this.pasienId = pasienId;
-        this.pasienNama = pasienNama;
+    private JTextField jadwalIdField;
+    private JTextArea kondisiField, efekSampingField, catatanField;
+    private JButton simpanButton;
+    private EvaluasiView evaluasiViewCaller; // Untuk merefresh tabel setelah data disimpan
 
-        setTitle("Form Evaluasi Sesi Kemoterapi");
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(600, 700);
+    public EvaluasiTambah(EvaluasiView caller, String username) {
+        this.evaluasiViewCaller = caller;
+
+        setTitle("Form Tambah Evaluasi Sesi");
+        setSize(500, 600);
         setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
 
-        evaluasiPanel = new EvaluasiSesiKemoPanel();
-        add(evaluasiPanel);
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new GridBagLayout());
+        formPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Pre-fill patient name
-        evaluasiPanel.namaPasien.setText(this.pasienNama);
-        evaluasiPanel.namaPasien.setEditable(false); // Make it non-editable
+        // Title
+        JLabel titleLabel = new JLabel("Form Evaluasi Sesi Kemoterapi", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        formPanel.add(titleLabel, gbc);
 
-        evaluasiPanel.submitButton.addActionListener(e -> {
-            if (validasiInput(evaluasiPanel)) {
-                saveEvaluasiToDatabase(evaluasiPanel);
-            }
-        });
+        // Jadwal ID
+        gbc.gridy++; gbc.gridwidth = 1;
+        gbc.gridx = 0;
+        formPanel.add(new JLabel("ID Jadwal Terapi:"), gbc);
 
-        setVisible(true);
+        gbc.gridx = 1;
+        jadwalIdField = new JTextField();
+        jadwalIdField.setToolTipText("Masukkan ID dari jadwal terapi yang akan dievaluasi.");
+        formPanel.add(jadwalIdField, gbc);
+
+        // Kondisi Post Terapi
+        gbc.gridy++;
+        gbc.gridx = 0;
+        formPanel.add(new JLabel("Kondisi Pasca-Terapi:"), gbc);
+        
+        gbc.gridx = 1;
+        kondisiField = new JTextArea(4, 20);
+        kondisiField.setLineWrap(true);
+        kondisiField.setWrapStyleWord(true);
+        formPanel.add(new JScrollPane(kondisiField), gbc);
+
+        // Efek Samping
+        gbc.gridy++;
+        gbc.gridx = 0;
+        formPanel.add(new JLabel("Efek Samping:"), gbc);
+
+        gbc.gridx = 1;
+        efekSampingField = new JTextArea(4, 20);
+        efekSampingField.setLineWrap(true);
+        efekSampingField.setWrapStyleWord(true);
+        formPanel.add(new JScrollPane(efekSampingField), gbc);
+        
+        // Catatan Tambahan
+        gbc.gridy++;
+        gbc.gridx = 0;
+        formPanel.add(new JLabel("Catatan Tambahan:"), gbc);
+
+        gbc.gridx = 1;
+        catatanField = new JTextArea(4, 20);
+        catatanField.setLineWrap(true);
+        catatanField.setWrapStyleWord(true);
+        formPanel.add(new JScrollPane(catatanField), gbc);
+
+        add(formPanel, BorderLayout.CENTER);
+
+        // Tombol Simpan
+        simpanButton = new JButton("Simpan Evaluasi");
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 15, 10, 15));
+        buttonPanel.add(simpanButton);
+        add(buttonPanel, BorderLayout.SOUTH);
+
+        // Action Listener
+        simpanButton.addActionListener(e -> simpanEvaluasi());
     }
-    
-    // Original constructor (if needed for testing or other entry points, can be kept)
-    public EvaluasiTambah() {
-        this(-1, ""); // Call the main constructor with default values
-    }
 
-    private boolean validasiInput(EvaluasiSesiKemoPanel panel) {
-        // Validasi nama pasien (already pre-filled, so minimal check needed)
-        if (panel.namaPasien.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Nama pasien harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
-            panel.namaPasien.requestFocus();
-            return false;
+    private void simpanEvaluasi() {
+        // Validasi input
+        String jadwalIdStr = jadwalIdField.getText().trim();
+        String kondisi = kondisiField.getText().trim();
+        String efek = efekSampingField.getText().trim();
+        String catatan = catatanField.getText().trim();
+
+        if (jadwalIdStr.isEmpty() || kondisi.isEmpty() || efek.isEmpty() || catatan.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Semua field harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
-        
-        // Validasi tanggal sesi
-        if (panel.tanggalSesi.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Tanggal sesi harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
-            panel.tanggalSesi.requestFocus();
-            return false;
-        }
-        
-        if (!isValidDate(panel.tanggalSesi.getText().trim())) {
-            JOptionPane.showMessageDialog(this, 
-                "Format tanggal tidak valid!\n" +
-                "Gunakan format: dd-MM-yyyy\n" +
-                "Contoh: 15-06-2025", 
-                "Error", JOptionPane.ERROR_MESSAGE);
-            panel.tanggalSesi.requestFocus();
-            return false;
-        }
-        
-        if (!isDateNotFuture(panel.tanggalSesi.getText().trim())) {
-            JOptionPane.showMessageDialog(this, 
-                "Tanggal sesi tidak boleh di masa depan!", 
-                "Error", JOptionPane.ERROR_MESSAGE);
-            panel.tanggalSesi.requestFocus();
-            return false;
-        }
-        
-        if (!isDateNotTooOld(panel.tanggalSesi.getText().trim())) {
-            JOptionPane.showMessageDialog(this, 
-                "Tanggal sesi tidak boleh lebih dari 1 tahun yang lalu!", 
-                "Error", JOptionPane.ERROR_MESSAGE);
-            panel.tanggalSesi.requestFocus();
-            return false;
-        }
-        
-        // Validasi sesi ke
-        if (panel.sesiKe.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Sesi ke harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
-            panel.sesiKe.requestFocus();
-            return false;
-        }
-        
-        // Validasi durasi terapi
-        if (panel.durasiTerapi.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Durasi terapi harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
-            panel.durasiTerapi.requestFocus();
-            return false;
-        }
-        
-        // Validasi tekanan darah
-        if (panel.tekananDarahSesi.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Tekanan darah harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
-            panel.tekananDarahSesi.requestFocus();
-            return false;
-        }
-        
-        // Validasi suhu tubuh
-        if (panel.suhuTubuhSesi.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Suhu tubuh harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
-            panel.suhuTubuhSesi.requestFocus();
-            return false;
-        }
-        
-        // Validasi denyut nadi
-        if (panel.nadiSesi.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Denyut nadi harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
-            panel.nadiSesi.requestFocus();
-            return false;
-        }
-        
-        // Validasi saturasi oksigen
-        if (panel.saturasiOksigen.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Saturasi oksigen harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
-            panel.saturasiOksigen.requestFocus();
-            return false;
-        }
-        
-        // Validasi efek samping lain
-        if (panel.efekSampingLain.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Efek samping lain harus diisi!\n(Jika tidak ada, tulis 'Tidak ada')", "Error", JOptionPane.ERROR_MESSAGE);
-            panel.efekSampingLain.requestFocus();
-            return false;
-        }
-        
-        // Validasi komplikasi
-        if (panel.komplikasi.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Komplikasi harus diisi!\n(Jika tidak ada, tulis 'Tidak ada')", "Error", JOptionPane.ERROR_MESSAGE);
-            panel.komplikasi.requestFocus();
-            return false;
-        }
-        
-        // Validasi catatan khusus
-        if (panel.catatanKhusus.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Catatan khusus harus diisi!\n(Jika tidak ada, tulis 'Tidak ada')", "Error", JOptionPane.ERROR_MESSAGE);
-            panel.catatanKhusus.requestFocus();
-            return false;
-        }
-        
-        // Validasi jadwal sesi berikutnya
-        if (panel.sesiBerikutnya.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Jadwal sesi berikutnya harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
-            panel.sesiBerikutnya.requestFocus();
-            return false;
-        }
-        
-        // Validasi obat pendukung
-        if (panel.obatPendukung.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Obat pendukung harus diisi!\n(Jika tidak ada, tulis 'Tidak ada')", "Error", JOptionPane.ERROR_MESSAGE);
-            panel.obatPendukung.requestFocus();
-            return false;
-        }
-        
-        // Validasi perawatan khusus
-        if (panel.perawatanKhusus.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Perawatan khusus harus diisi!\n(Jika tidak ada, tulis 'Tidak ada')", "Error", JOptionPane.ERROR_MESSAGE);
-            panel.perawatanKhusus.requestFocus();
-            return false;
-        }
-        
-        // Validasi petugas evaluator
-        if (panel.petugasEvaluator.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Petugas evaluator harus diisi!", "Error", JOptionPane.ERROR_MESSAGE);
-            panel.petugasEvaluator.requestFocus();
-            return false;
-        }
-        
-        // Validasi numerik untuk beberapa field
-        if (!isValidNumeric(panel.sesiKe.getText().trim(), "Sesi ke")) {
-            panel.sesiKe.requestFocus();
-            return false;
-        }
-        
-        if (!isValidNumeric(panel.durasiTerapi.getText().trim(), "Durasi terapi")) {
-            panel.durasiTerapi.requestFocus();
-            return false;
-        }
-        
-        if (!isValidNumeric(panel.suhuTubuhSesi.getText().trim(), "Suhu tubuh")) {
-            panel.suhuTubuhSesi.requestFocus();
-            return false;
-        }
-        
-        if (!isValidNumeric(panel.nadiSesi.getText().trim(), "Denyut nadi")) {
-            panel.nadiSesi.requestFocus();
-            return false;
-        }
-        
-        if (!isValidNumeric(panel.saturasiOksigen.getText().trim(), "Saturasi oksigen")) {
-            panel.saturasiOksigen.requestFocus();
-            return false;
-        }
-        
-        return true;
-    }
-    
-    // Method untuk validasi numerik
-    private boolean isValidNumeric(String value, String fieldName) {
+
+        int jadwalId;
         try {
-            double num = Double.parseDouble(value);
-            if (num <= 0) {
-                JOptionPane.showMessageDialog(this, 
-                    fieldName + " harus berupa angka positif!", 
-                    "Error", JOptionPane.ERROR_MESSAGE);
-                return false;
-            }
-            return true;
+            jadwalId = Integer.parseInt(jadwalIdStr);
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, 
-                fieldName + " harus berupa angka!", 
-                "Error", JOptionPane.ERROR_MESSAGE);
-            return false;
+            JOptionPane.showMessageDialog(this, "ID Jadwal harus berupa angka!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
-    }
-    
-    // Method untuk validasi format tanggal
-    private boolean isValidDate(String dateStr) {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-        sdf.setLenient(false); // Strict parsing
         
-        try {
-            Date date = sdf.parse(dateStr);
-            // Double check: parse kembali untuk memastikan format benar
-            String reformattedDate = sdf.format(date);
-            return dateStr.equals(reformattedDate);
-        } catch (ParseException e) {
-            return false;
+        // Cek apakah jadwal_id ada di database
+        if (!isJadwalExists(jadwalId)) {
+            JOptionPane.showMessageDialog(this, "ID Jadwal Terapi " + jadwalId + " tidak ditemukan di database.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
-    }
-    
-    // Method untuk memastikan tanggal tidak di masa depan
-    private boolean isDateNotFuture(String dateStr) {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+
+        // Proses penyimpanan ke database
+        String sql = "INSERT INTO evaluasi_kemo (jadwal_id, kondisi_post_terapi, efek_samping, catatan, tanggal_evaluasi) VALUES (?, ?, ?, ?, NOW())";
         
-        try {
-            Date inputDate = sdf.parse(dateStr);
-            Date today = new Date();
-            return !inputDate.after(today);
-        } catch (ParseException e) {
-            return false;
-        }
-    }
-    
-    // Method untuk memastikan tanggal tidak terlalu lama (maksimal 1 tahun lalu)
-    private boolean isDateNotTooOld(String dateStr) {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-        
-        try {
-            Date inputDate = sdf.parse(dateStr);
-            
-            Calendar cal = Calendar.getInstance();
-            cal.add(Calendar.YEAR, -1); // 1 tahun lalu
-            Date oneYearAgo = cal.getTime();
-            
-            return !inputDate.before(oneYearAgo);
-        } catch (ParseException e) {
-            return false;
-        }
-    }
-
-    private void saveEvaluasiToDatabase(EvaluasiSesiKemoPanel panel) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            conn = DBConnection.connect();
-            if (conn == null) {
-                throw new SQLException("Failed to connect to database.");
-            }
-            
-            // NEW LOGIC: Find a matching jadwal_terapi based on pasienId, sesiKe, and tanggalSesi
-            String findJadwalSql = "SELECT jt.jadwal_id FROM jadwal_terapi jt " +
-                                   "JOIN rencana_terapi rt ON jt.terapi_id = rt.terapi_id " +
-                                   "WHERE rt.pasien_id = ? AND jt.sesi_ke = ? AND DATE_FORMAT(jt.tanggal_terapi, '%d-%m-%Y') = ?";
-            pstmt = conn.prepareStatement(findJadwalSql);
-            pstmt.setInt(1, this.pasienId); // Use the stored pasienId
-            pstmt.setInt(2, Integer.parseInt(panel.sesiKe.getText()));
-            pstmt.setString(3, panel.tanggalSesi.getText()); // Use the formatted date string
-            rs = pstmt.executeQuery();
-
-            int jadwalId = -1;
-            if (rs.next()) {
-                jadwalId = rs.getInt("jadwal_id");
-            } else {
-                JOptionPane.showMessageDialog(this, 
-                    "Jadwal terapi tidak ditemukan untuk pasien ini pada sesi dan tanggal yang ditentukan.\n" +
-                    "Pastikan 'Sesi ke' dan 'Tanggal Sesi' sesuai dengan jadwal yang telah ada.", 
-                    "Error Database", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Prepare the SQL insert statement for evaluasi_kemo
-            String sql = "INSERT INTO evaluasi_kemo (jadwal_id, kondisi_post_terapi, efek_samping, catatan, tanggal_evaluasi) VALUES (?, ?, ?, ?, NOW())";
-            pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-
-            // Assuming 'kondisi_post_terapi' will combine several physical conditions for simplicity
-            String kondisiPostTerapi = "Tekanan Darah: " + panel.tekananDarahSesi.getText() + " mmHg, " +
-                                       "Suhu Tubuh: " + panel.suhuTubuhSesi.getText() + " °C, " +
-                                       "Denyut Nadi: " + panel.nadiSesi.getText() + " bpm, " +
-                                       "Saturasi Oksigen: " + panel.saturasiOksigen.getText() + " %";
-
-            // Assuming 'efek_samping' will combine all side effects
-            String efekSamping = "Mual/Muntah: " + panel.mualMuntah.getSelectedItem() + ", " +
-                                 "Kelelahan: " + panel.kelelahan.getSelectedItem() + ", " +
-                                 "Demam: " + panel.demam.getSelectedItem() + ", " +
-                                 "Diare: " + panel.diare.getSelectedItem() + ", " +
-                                 "Gangguan Nafsu Makan: " + panel.nafsuMakan.getSelectedItem() + ", " +
-                                 "Nyeri/Sakit: " + panel.nyeri.getSelectedItem() + ", " +
-                                 "Lain-lain: " + panel.efekSampingLain.getText();
-            
-            // Assuming 'catatan' will combine complications and special notes
-            String catatan = "Komplikasi: " + panel.komplikasi.getText() + "\n" +
-                             "Catatan Khusus: " + panel.catatanKhusus.getText() + "\n" +
-                             "Toleransi Pasien: " + panel.toleransiPasien.getSelectedItem() + "\n" +
-                             "Kondisi Psikologis: " + panel.kondisiPsikologis.getSelectedItem() + "\n" +
-                             "Perubahan Dosis: " + panel.perubahanDosis.getSelectedItem() + "\n" +
-                             "Jadwal Sesi Berikutnya: " + panel.sesiBerikutnya.getText() + "\n" +
-                             "Obat Pendukung: " + panel.obatPendukung.getText() + "\n" +
-                             "Perawatan Khusus: " + panel.perawatanKhusus.getText() + "\n" +
-                             "Petugas Evaluator: " + panel.petugasEvaluator.getText();
+        try (Connection conn = DBConnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, jadwalId);
-            pstmt.setString(2, kondisiPostTerapi);
-            pstmt.setString(3, efekSamping);
+            pstmt.setString(2, kondisi);
+            pstmt.setString(3, efek);
             pstmt.setString(4, catatan);
 
             int rowsAffected = pstmt.executeUpdate();
-
             if (rowsAffected > 0) {
                 JOptionPane.showMessageDialog(this, "Data evaluasi berhasil disimpan!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
-                dispose(); // Close the input form
-                new EvaluasiView(); // Open the view to show all evaluations
-            } else {
-                JOptionPane.showMessageDialog(this, "Gagal menyimpan data evaluasi.", "Error Database", JOptionPane.ERROR_MESSAGE);
+                evaluasiViewCaller.loadEvaluasiData(); // Refresh tabel di frame sebelumnya
+                dispose(); // Tutup jendela ini
             }
+
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error database: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Gagal menyimpan data ke database: " + ex.getMessage(), "Error Database", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Input numerik tidak valid: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        } finally {
-            try {
-                if (rs != null) rs.close();
-                if (pstmt != null) pstmt.close();
-                if (conn != null) conn.close();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
         }
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new EvaluasiTambah());
-    }
-}
-
-// EvaluasiSesiKemoPanel remains the same as in your original code
-class EvaluasiSesiKemoPanel extends JPanel {
-    JTextField namaPasien, tanggalSesi, sesiKe, durasiTerapi;
-    JTextField tekananDarahSesi, suhuTubuhSesi, nadiSesi, saturasiOksigen;
-    JComboBox<String> mualMuntah, kelelahan, demam, diare, nafsuMakan, nyeri;
-    JTextArea efekSampingLain;
-    JComboBox<String> toleransiPasien, kondisiPsikologis, perubahanDosis;
-    JTextArea komplikasi, catatanKhusus, sesiBerikutnya, obatPendukung, perawatanKhusus;
-    JTextField petugasEvaluator;
-    JButton submitButton;
-
-    public EvaluasiSesiKemoPanel() {
-        setLayout(new BorderLayout());
-        
-        JPanel mainPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.anchor = GridBagConstraints.WEST;
-
-        // Title
-        JLabel titleLabel = new JLabel("EVALUASI HASIL SESI KEMOTERAPI");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        titleLabel.setHorizontalAlignment(JLabel.CENTER);
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-        mainPanel.add(titleLabel, gbc);
-
-        // Tambahan label untuk menginformasikan bahwa semua field wajib diisi
-        JLabel infoLabel = new JLabel("<html><i>* Semua field wajib diisi</i></html>");
-        infoLabel.setFont(new Font("Arial", Font.ITALIC, 10));
-        infoLabel.setForeground(Color.RED);
-        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 2;
-        mainPanel.add(infoLabel, gbc);
-
-        // Reset gridwidth
-        gbc.gridwidth = 1;
-        int row = 2;
-
-        // Informasi Sesi
-        addSectionHeader(mainPanel, gbc, "INFORMASI SESI", row++);
-        
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Nama Pasien: *"), gbc);
-        gbc.gridx = 1;
-        namaPasien = new JTextField(20);
-        mainPanel.add(namaPasien, gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Tanggal Sesi: *"), gbc);
-        gbc.gridx = 1;
-        
-        // Panel untuk tanggal dengan format bantuan
-        JPanel tanggalPanel = new JPanel(new BorderLayout());
-        tanggalSesi = new JTextField(20);
-        tanggalSesi.setToolTipText("Format: dd-MM-yyyy (Contoh: 15-06-2025)");
-        
-        // Label bantuan format
-        JLabel formatLabel = new JLabel("<html><font size='-2' color='blue'>Format: dd-MM-yyyy</font></html>");
-        
-        tanggalPanel.add(tanggalSesi, BorderLayout.CENTER);
-        tanggalPanel.add(formatLabel, BorderLayout.SOUTH);
-        
-        mainPanel.add(tanggalPanel, gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Sesi Ke: *"), gbc);
-        gbc.gridx = 1;
-        sesiKe = new JTextField(20);
-        mainPanel.add(sesiKe, gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Durasi Terapi (jam): *"), gbc);
-        gbc.gridx = 1;
-        durasiTerapi = new JTextField(20);
-        mainPanel.add(durasiTerapi, gbc);
-        row++;
-
-        // Kondisi Fisik
-        addSectionHeader(mainPanel, gbc, "KONDISI FISIK SELAMA TERAPI", row++);
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Tekanan Darah: *"), gbc);
-        gbc.gridx = 1;
-        tekananDarahSesi = new JTextField(20);
-        tekananDarahSesi.setToolTipText("Contoh: 120/80");
-        mainPanel.add(tekananDarahSesi, gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Suhu Tubuh (°C): *"), gbc);
-        gbc.gridx = 1;
-        suhuTubuhSesi = new JTextField(20);
-        mainPanel.add(suhuTubuhSesi, gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Denyut Nadi (bpm): *"), gbc);
-        gbc.gridx = 1;
-        nadiSesi = new JTextField(20);
-        mainPanel.add(nadiSesi, gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Saturasi Oksigen (%): *"), gbc);
-        gbc.gridx = 1;
-        saturasiOksigen = new JTextField(20);
-        mainPanel.add(saturasiOksigen, gbc);
-        row++;
-
-        // Efek Samping
-        addSectionHeader(mainPanel, gbc, "EFEK SAMPING YANG DIALAMI", row++);
-
-        String[] severityOptions = {"Tidak Ada", "Ringan", "Sedang", "Berat"};
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Mual/Muntah:"), gbc);
-        gbc.gridx = 1;
-        mualMuntah = new JComboBox<>(severityOptions);
-        mainPanel.add(mualMuntah, gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Kelelahan:"), gbc);
-        gbc.gridx = 1;
-        kelelahan = new JComboBox<>(severityOptions);
-        mainPanel.add(kelelahan, gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Demam:"), gbc);
-        gbc.gridx = 1;
-        demam = new JComboBox<>(severityOptions);
-        mainPanel.add(demam, gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Diare:"), gbc);
-        gbc.gridx = 1;
-        diare = new JComboBox<>(severityOptions);
-        mainPanel.add(diare, gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Gangguan Nafsu Makan:"), gbc);
-        gbc.gridx = 1;
-        nafsuMakan = new JComboBox<>(severityOptions);
-        mainPanel.add(nafsuMakan, gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Nyeri/Sakit:"), gbc);
-        gbc.gridx = 1;
-        nyeri = new JComboBox<>(severityOptions);
-        mainPanel.add(nyeri, gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Efek Samping Lain: *"), gbc);
-        gbc.gridx = 1;
-        efekSampingLain = new JTextArea(2, 20);
-        efekSampingLain.setToolTipText("Jika tidak ada, tulis 'Tidak ada'");
-        mainPanel.add(new JScrollPane(efekSampingLain), gbc);
-        row++;
-
-        // Respon Terhadap Terapi
-        addSectionHeader(mainPanel, gbc, "RESPON TERHADAP TERAPI", row++);
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Toleransi Pasien:"), gbc);
-        gbc.gridx = 1;
-        toleransiPasien = new JComboBox<>(new String[]{"Baik", "Sedang", "Buruk"});
-        mainPanel.add(toleransiPasien, gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Kondisi Psikologis:"), gbc);
-        gbc.gridx = 1;
-        kondisiPsikologis = new JComboBox<>(new String[]{"Stabil", "Cemas", "Depresi", "Optimis"});
-        mainPanel.add(kondisiPsikologis, gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Komplikasi: *"), gbc);
-        gbc.gridx = 1;
-        komplikasi = new JTextArea(2, 20);
-        komplikasi.setToolTipText("Jika tidak ada, tulis 'Tidak ada'");
-        mainPanel.add(new JScrollPane(komplikasi), gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Catatan Khusus: *"), gbc);
-        gbc.gridx = 1;
-        catatanKhusus = new JTextArea(2, 20);
-        catatanKhusus.setToolTipText("Jika tidak ada, tulis 'Tidak ada'");
-        mainPanel.add(new JScrollPane(catatanKhusus), gbc);
-        row++;
-
-        // Rekomendasi
-        addSectionHeader(mainPanel, gbc, "REKOMENDASI TINDAK LANJUT", row++);
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Perubahan Dosis:"), gbc);
-        gbc.gridx = 1;
-        perubahanDosis = new JComboBox<>(new String[]{"Tidak Perlu", "Kurangi Dosis", "Naikkan Dosis", "Tunda Sesi"});
-        mainPanel.add(perubahanDosis, gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Jadwal Sesi Berikutnya: *"), gbc);
-        gbc.gridx = 1;
-        sesiBerikutnya = new JTextArea(2, 20);
-        sesiBerikutnya.setToolTipText("Contoh: Senin, 14 Juni 2025");
-        mainPanel.add(new JScrollPane(sesiBerikutnya), gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Obat Pendukung: *"), gbc);
-        gbc.gridx = 1;
-        obatPendukung = new JTextArea(2, 20);
-        obatPendukung.setToolTipText("Jika tidak ada, tulis 'Tidak ada'");
-        mainPanel.add(new JScrollPane(obatPendukung), gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Perawatan Khusus: *"), gbc);
-        gbc.gridx = 1;
-        perawatanKhusus = new JTextArea(2, 20);
-        perawatanKhusus.setToolTipText("Jika tidak ada, tulis 'Tidak ada'");
-        mainPanel.add(new JScrollPane(perawatanKhusus), gbc);
-        row++;
-
-        gbc.gridx = 0; gbc.gridy = row;
-        mainPanel.add(new JLabel("Petugas Evaluator: *"), gbc);
-        gbc.gridx = 1;
-        petugasEvaluator = new JTextField(20);
-        mainPanel.add(petugasEvaluator, gbc);
-        row++;
-
-        // Submit Button
-        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        submitButton = new JButton("Submit Evaluasi");
-        submitButton.setFont(new Font("Arial", Font.BOLD, 12));
-        submitButton.setBackground(new Color(70, 130, 180));
-        submitButton.setForeground(Color.WHITE);
-        mainPanel.add(submitButton, gbc);
-
-        // Scroll pane untuk main panel
-        JScrollPane scrollPane = new JScrollPane(mainPanel);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        add(scrollPane, BorderLayout.CENTER);
-    }
-
-    private void addSectionHeader(JPanel panel, GridBagConstraints gbc, String title, int row) {
-        JLabel sectionLabel = new JLabel(title);
-        sectionLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        sectionLabel.setForeground(new Color(70, 130, 180));
-        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        
-        // Tambah separator line
-        JPanel sectionPanel = new JPanel(new BorderLayout());
-        sectionPanel.add(sectionLabel, BorderLayout.WEST);
-        sectionPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
-        
-        panel.add(sectionPanel, gbc);
-        
-        // Reset untuk field berikutnya
-        gbc.gridwidth = 1;
-        gbc.fill = GridBagConstraints.NONE;
+    // Fungsi helper untuk memeriksa keberadaan jadwal_id
+    private boolean isJadwalExists(int jadwalId) {
+        String sql = "SELECT 1 FROM jadwal_terapi WHERE jadwal_id = ?";
+        try (Connection conn = DBConnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, jadwalId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next(); // true jika ada, false jika tidak
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }
