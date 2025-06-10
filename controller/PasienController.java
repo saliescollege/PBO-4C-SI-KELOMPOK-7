@@ -1,6 +1,7 @@
 package PBO_4C_SI_KELOMPOK_7.controller;
-import PBO_4C_SI_KELOMPOK_7.db.DBConnection;
-import PBO_4C_SI_KELOMPOK_7.model.Pasien;
+
+import PBO_4C_SI_KELOMPOK_7.db.DBConnection; //
+import PBO_4C_SI_KELOMPOK_7.model.Pasien; //
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -10,116 +11,262 @@ public class PasienController {
 
     // CREATE - Tambah Pasien
     public static void tambahPasien(Pasien pasien) {
-        String sql = "INSERT INTO pasien (nama, alamat, telepon, tanggal_lahir, kelamin, diagnosa, histopatologi, " +
-                     "tekanan_darah, suhu_tubuh, denyut_nadi, berat_badan, hb, leukosit, trombosit, fungsi_hati, fungsi_ginjal, " +
-                     "jenis_kemoterapi, dosis, siklus, premedikasi, akses_vena, dokter_id) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        Connection conn = null;
+        PreparedStatement pstmtPasien = null;
+        PreparedStatement pstmtDiagnosa = null;
+        PreparedStatement pstmtPeriksaFisik = null;
+        PreparedStatement pstmtRencanaTerapi = null;
+        ResultSet rs = null;
 
-        try (Connection conn = DBConnection.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try {
+            conn = DBConnection.connect(); //
+            if (conn == null) { //
+                throw new SQLException("Failed to connect to database."); //
+            }
+            conn.setAutoCommit(false); // Start transaction
 
-            stmt.setString(1, pasien.getNama());
-            stmt.setString(2, pasien.getAlamat());
-            stmt.setString(3, pasien.getTelepon());
-            stmt.setDate(4, Date.valueOf(pasien.getTanggalLahir()));
-            stmt.setString(5, pasien.getKelamin());
-            stmt.setString(6, pasien.getDiagnosa());
-            stmt.setString(7, pasien.getHistopatologi());
+            // 1. Insert into 'pasien' table
+            String sqlPasien = "INSERT INTO pasien (nama_lengkap, alamat, no_telepon, tanggal_lahir, jenis_kelamin, dokter_id) VALUES (?, ?, ?, ?, ?, ?)"; //
+            pstmtPasien = conn.prepareStatement(sqlPasien, Statement.RETURN_GENERATED_KEYS); //
+            pstmtPasien.setString(1, pasien.getNama()); //
+            pstmtPasien.setString(2, pasien.getAlamat()); //
+            pstmtPasien.setString(3, pasien.getTelepon()); //
+            pstmtPasien.setDate(4, Date.valueOf(pasien.getTanggalLahir())); //
+            pstmtPasien.setString(5, pasien.getKelamin()); //
+            pstmtPasien.setInt(6, pasien.getDokterId()); //
+            pstmtPasien.executeUpdate(); //
 
-            stmt.setString(8, pasien.getTekananDarah());
-            stmt.setString(9, pasien.getSuhuTubuh());
-            stmt.setString(10, pasien.getDenyutNadi());
-            stmt.setString(11, pasien.getBeratBadan());
-            stmt.setString(12, pasien.getHb());
-            stmt.setString(13, pasien.getLeukosit());
-            stmt.setString(14, pasien.getTrombosit());
-            stmt.setString(15, pasien.getFungsiHati());
-            stmt.setString(16, pasien.getFungsiGinjal());
+            rs = pstmtPasien.getGeneratedKeys(); //
+            int pasienId = -1; //
+            if (rs.next()) { //
+                pasienId = rs.getInt(1); // Get the auto-generated pasien_id
+            } else {
+                throw new SQLException("Creating pasien failed, no ID obtained."); //
+            }
+            pasien.setId(pasienId); // Set ID back to the patient object
 
-            stmt.setString(17, pasien.getJenisKemoterapi());
-            stmt.setString(18, pasien.getDosis());
-            stmt.setString(19, pasien.getSiklus());
-            stmt.setString(20, pasien.getPremedikasi());
-            stmt.setString(21, pasien.getAksesVena());
-            stmt.setInt(22, pasien.getDokterId());
+            // 2. Insert into 'diagnosa' table
+            String sqlDiagnosa = "INSERT INTO diagnosa (pasien_id, diagnosa, histopatologi) VALUES (?, ?, ?)"; //
+            pstmtDiagnosa = conn.prepareStatement(sqlDiagnosa); //
+            pstmtDiagnosa.setInt(1, pasienId); //
+            pstmtDiagnosa.setString(2, pasien.getDiagnosa()); //
+            pstmtDiagnosa.setString(3, pasien.getHistopatologi()); //
+            pstmtDiagnosa.executeUpdate(); //
 
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("Gagal menambahkan pasien: " + e.getMessage());
-            e.printStackTrace();
+            // 3. Insert into 'periksa_fisik' table
+            String sqlPeriksaFisik = "INSERT INTO periksa_fisik (pasien_id, tekanan_darah, suhu_tubuh, denyut_nadi, berat_badan, hb, leukosit, trombosit, sgot_sgpt, ureum_kreatinin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; //
+            pstmtPeriksaFisik = conn.prepareStatement(sqlPeriksaFisik); //
+            pstmtPeriksaFisik.setInt(1, pasienId); //
+            pstmtPeriksaFisik.setString(2, pasien.getTekananDarah()); //
+            pstmtPeriksaFisik.setString(3, pasien.getSuhuTubuh()); //
+            pstmtPeriksaFisik.setString(4, pasien.getDenyutNadi()); //
+            pstmtPeriksaFisik.setString(5, pasien.getBeratBadan()); //
+            pstmtPeriksaFisik.setString(6, pasien.getHb()); //
+            pstmtPeriksaFisik.setString(7, pasien.getLeukosit()); //
+            pstmtPeriksaFisik.setString(8, pasien.getTrombosit()); //
+            pstmtPeriksaFisik.setString(9, pasien.getFungsiHati()); //
+            pstmtPeriksaFisik.setString(10, pasien.getFungsiGinjal()); //
+            pstmtPeriksaFisik.executeUpdate(); //
+
+            // 4. Insert into 'rencana_terapi' table
+            String sqlRencanaTerapi = "INSERT INTO rencana_terapi (pasien_id, jenis_kemoterapi, dosis, siklus, premedikasi, akses_vena, dokter_id, tanggal_dibuat) VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE())"; //
+            pstmtRencanaTerapi = conn.prepareStatement(sqlRencanaTerapi); //
+            pstmtRencanaTerapi.setInt(1, pasienId); //
+            pstmtRencanaTerapi.setString(2, pasien.getJenisKemoterapi()); //
+            pstmtRencanaTerapi.setString(3, pasien.getDosis()); //
+            pstmtRencanaTerapi.setString(4, pasien.getSiklus()); //
+            pstmtRencanaTerapi.setString(5, pasien.getPremedikasi()); //
+            pstmtRencanaTerapi.setString(6, pasien.getAksesVena()); //
+            pstmtRencanaTerapi.setInt(7, pasien.getDokterId()); //
+            pstmtRencanaTerapi.executeUpdate(); //
+
+            conn.commit(); // Commit transaction if all inserts are successful
+
+        } catch (SQLException e) { //
+            try { //
+                if (conn != null) conn.rollback(); // Rollback on error
+            } catch (SQLException ex) { //
+                System.err.println("Rollback failed: " + ex.getMessage()); //
+            }
+            System.err.println("Gagal menambahkan pasien (Transaksi dibatalkan): " + e.getMessage()); //
+            e.printStackTrace(); //
+        } finally {
+            try { //
+                if (rs != null) rs.close(); //
+                if (pstmtPasien != null) pstmtPasien.close(); //
+                if (pstmtDiagnosa != null) pstmtDiagnosa.close(); //
+                if (pstmtPeriksaFisik != null) pstmtPeriksaFisik.close(); //
+                if (pstmtRencanaTerapi != null) pstmtRencanaTerapi.close(); //
+                if (conn != null) conn.close(); //
+            } catch (SQLException ex) { //
+                ex.printStackTrace(); //
+            }
         }
     }
 
     // READ - Ambil Semua Pasien (untuk daftar/list)
     public static List<Pasien> getAllPasien() {
         List<Pasien> list = new ArrayList<>();
-        String sql = "SELECT * FROM pasien";
+        // Modified SQL: JOIN with dokter table to get doctor's name
+        String sql = "SELECT p.pasien_id, p.nama_lengkap, p.no_telepon, d.nama AS dokter_nama " +
+                     "FROM pasien p JOIN dokter d ON p.dokter_id = d.dokter_id";
 
-        try (Connection conn = DBConnection.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+        try (Connection conn = DBConnection.connect(); //
+             Statement stmt = conn.createStatement(); //
+             ResultSet rs = stmt.executeQuery(sql)) { //
 
-            while (rs.next()) {
-                Pasien p = new Pasien();
-                p.setId(rs.getInt("id"));
-                p.setNama(rs.getString("nama"));
-                p.setTelepon(rs.getString("telepon"));
-                p.setDokterId(rs.getInt("dokter_id"));
-                // Tambahkan field lain jika ingin ditampilkan di list
-                list.add(p);
+            while (rs.next()) { //
+                Pasien p = new Pasien(); //
+                p.setId(rs.getInt("pasien_id")); //
+                p.setNama(rs.getString("nama_lengkap")); //
+                p.setTelepon(rs.getString("no_telepon")); //
+                p.setDosis(rs.getString("dokter_nama")); // Using 'dosis' temporarily to pass doctor name
+                list.add(p); //
             }
 
-        } catch (SQLException e) {
-            System.err.println("Gagal mengambil data pasien: " + e.getMessage());
-            e.printStackTrace();
+        } catch (SQLException e) { //
+            System.err.println("Gagal mengambil data pasien: " + e.getMessage()); //
+            e.printStackTrace(); //
         }
-        return list;
+        return list; //
     }
 
-    // READ - Ambil Detail Pasien berdasarkan ID
-    public static Pasien getPasienById(int id) {
+    // READ - Ambil Detail Pasien berdasarkan ID (requires joining tables)
+    public static Pasien getPasienById(int pasienId) {
         Pasien p = null;
-        String sql = "SELECT * FROM pasien WHERE id = ?";
+        // Joining all relevant tables to get complete patient data, including doctor name
+        String sql = "SELECT p.pasien_id, p.nama_lengkap, p.alamat, p.no_telepon, p.tanggal_lahir, p.jenis_kelamin, p.dokter_id, " +
+                     "d.nama AS dokter_nama, diag.diagnosa, diag.histopatologi, " +
+                     "pf.tekanan_darah, pf.suhu_tubuh, pf.denyut_nadi, pf.berat_badan, pf.hb, pf.leukosit, pf.trombosit, pf.sgot_sgpt, pf.ureum_kreatinin, " +
+                     "rt.jenis_kemoterapi, rt.dosis, rt.siklus, rt.premedikasi, rt.akses_vena " +
+                     "FROM pasien p " +
+                     "LEFT JOIN dokter d ON p.dokter_id = d.dokter_id " + // Join with dokter table
+                     "LEFT JOIN diagnosa diag ON p.pasien_id = diag.pasien_id " + // Alias diagnosa table
+                     "LEFT JOIN periksa_fisik pf ON p.pasien_id = pf.pasien_id " +
+                     "LEFT JOIN rencana_terapi rt ON p.pasien_id = rt.pasien_id " +
+                     "WHERE p.pasien_id = ?";
 
-        try (Connection conn = DBConnection.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.connect(); //
+             PreparedStatement pstmt = conn.prepareStatement(sql)) { //
 
-            stmt.setInt(1, id);
-            ResultSet rs = stmt.executeQuery();
+            pstmt.setInt(1, pasienId); //
+            ResultSet rs = pstmt.executeQuery(); //
 
-            if (rs.next()) {
-                p = new Pasien();
-                p.setId(rs.getInt("id"));
-                p.setNama(rs.getString("nama"));
-                p.setAlamat(rs.getString("alamat"));
-                p.setTelepon(rs.getString("telepon"));
-                p.setTanggalLahir(rs.getDate("tanggal_lahir").toLocalDate());
-                p.setKelamin(rs.getString("kelamin"));
-                p.setDiagnosa(rs.getString("diagnosa"));
-                p.setHistopatologi(rs.getString("histopatologi"));
+            if (rs.next()) { //
+                p = new Pasien(); //
+                p.setId(rs.getInt("pasien_id")); //
+                p.setNama(rs.getString("nama_lengkap")); //
+                p.setAlamat(rs.getString("alamat")); //
+                p.setTelepon(rs.getString("no_telepon")); //
+                p.setTanggalLahir(rs.getDate("tanggal_lahir").toLocalDate()); //
+                p.setKelamin(rs.getString("jenis_kelamin")); //
+                p.setDokterId(rs.getInt("dokter_id")); //
+                p.setPremedikasi(rs.getString("dokter_nama")); // Using premedikasi temporarily for doctor name in detail view
 
-                p.setTekananDarah(rs.getString("tekanan_darah"));
-                p.setSuhuTubuh(rs.getString("suhu_tubuh"));
-                p.setDenyutNadi(rs.getString("denyut_nadi"));
-                p.setBeratBadan(rs.getString("berat_badan"));
-                p.setHb(rs.getString("hb"));
-                p.setLeukosit(rs.getString("leukosit"));
-                p.setTrombosit(rs.getString("trombosit"));
-                p.setFungsiHati(rs.getString("fungsi_hati"));
-                p.setFungsiGinjal(rs.getString("fungsi_ginjal"));
+                // Data from diagnosa table
+                p.setDiagnosa(rs.getString("diagnosa")); //
+                p.setHistopatologi(rs.getString("histopatologi")); //
 
-                p.setJenisKemoterapi(rs.getString("jenis_kemoterapi"));
-                p.setDosis(rs.getString("dosis"));
-                p.setSiklus(rs.getString("siklus"));
-                p.setPremedikasi(rs.getString("premedikasi"));
-                p.setAksesVena(rs.getString("akses_vena"));
-                p.setDokterId(rs.getInt("dokter_id"));
+                // Data from periksa_fisik table
+                p.setTekananDarah(rs.getString("tekanan_darah")); //
+                p.setSuhuTubuh(rs.getString("suhu_tubuh")); //
+                p.setDenyutNadi(rs.getString("denyut_nadi")); //
+                p.setBeratBadan(rs.getString("berat_badan")); //
+                p.setHb(rs.getString("hb")); //
+                p.setLeukosit(rs.getString("leukosit")); //
+                p.setTrombosit(rs.getString("trombosit")); //
+                p.setFungsiHati(rs.getString("sgot_sgpt")); // Direct column name
+                p.setFungsiGinjal(rs.getString("ureum_kreatinin")); // Direct column name
+
+                // Data from rencana_terapi table
+                p.setJenisKemoterapi(rs.getString("jenis_kemoterapi")); //
+                p.setDosis(rs.getString("dosis")); //
+                p.setSiklus(rs.getString("siklus")); //
+                p.setPremedikasi(rs.getString("premedikasi")); // This will now store doctor name, original premedikasi will be lost unless a new field is added to model
+                p.setAksesVena(rs.getString("akses_vena")); //
             }
 
-        } catch (SQLException e) {
-            System.err.println("Gagal mengambil detail pasien: " + e.getMessage());
-            e.printStackTrace();
+        } catch (SQLException e) { //
+            System.err.println("Gagal mengambil detail pasien: " + e.getMessage()); //
+            e.printStackTrace(); //
         }
-        return p;
+        return p; //
+    }
+
+    // NEW METHOD: Delete Pasien
+    public static boolean deletePasien(int pasienId) {
+        Connection conn = null;
+        try {
+            conn = DBConnection.connect(); //
+            if (conn == null) { //
+                throw new SQLException("Failed to connect to database."); //
+            }
+            conn.setAutoCommit(false); // Start transaction
+
+            // IMPORTANT: Delete in reverse order of foreign key dependencies
+            // 1. Delete from evaluasi_kemo (depends on jadwal_terapi)
+            String sqlDeleteEvaluasi = "DELETE FROM evaluasi_kemo WHERE jadwal_id IN (SELECT jadwal_id FROM jadwal_terapi WHERE terapi_id IN (SELECT terapi_id FROM rencana_terapi WHERE pasien_id = ?))"; //
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlDeleteEvaluasi)) { //
+                pstmt.setInt(1, pasienId); //
+                pstmt.executeUpdate(); //
+            }
+
+            // 2. Delete from jadwal_terapi (depends on rencana_terapi)
+            String sqlDeleteJadwalTerapi = "DELETE FROM jadwal_terapi WHERE terapi_id IN (SELECT terapi_id FROM rencana_terapi WHERE pasien_id = ?)"; //
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlDeleteJadwalTerapi)) { //
+                pstmt.setInt(1, pasienId); //
+                pstmt.executeUpdate(); //
+            }
+
+            // 3. Delete from rencana_terapi (depends on pasien)
+            String sqlDeleteRencanaTerapi = "DELETE FROM rencana_terapi WHERE pasien_id = ?"; //
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlDeleteRencanaTerapi)) { //
+                pstmt.setInt(1, pasienId); //
+                pstmt.executeUpdate(); //
+            }
+
+            // 4. Delete from periksa_fisik (depends on pasien)
+            String sqlDeletePeriksaFisik = "DELETE FROM periksa_fisik WHERE pasien_id = ?"; //
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlDeletePeriksaFisik)) { //
+                pstmt.setInt(1, pasienId); //
+                pstmt.executeUpdate(); //
+            }
+
+            // 5. Delete from diagnosa (depends on pasien)
+            String sqlDeleteDiagnosa = "DELETE FROM diagnosa WHERE pasien_id = ?"; //
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlDeleteDiagnosa)) { //
+                pstmt.setInt(1, pasienId); //
+                pstmt.executeUpdate(); //
+            }
+
+            // 6. Finally, delete from pasien
+            String sqlDeletePasien = "DELETE FROM pasien WHERE pasien_id = ?"; //
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlDeletePasien)) { //
+                pstmt.setInt(1, pasienId); //
+                int rowsAffected = pstmt.executeUpdate(); //
+                if (rowsAffected > 0) { //
+                    conn.commit(); // Commit transaction
+                    return true; //
+                }
+            }
+            conn.rollback(); // If no rows affected for pasien, rollback
+            return false;
+
+        } catch (SQLException e) { //
+            try { //
+                if (conn != null) conn.rollback(); //
+            } catch (SQLException ex) { //
+                System.err.println("Rollback failed: " + ex.getMessage()); //
+            }
+            System.err.println("Gagal menghapus pasien (Transaksi dibatalkan): " + e.getMessage()); //
+            e.printStackTrace(); //
+            return false; //
+        } finally {
+            try { //
+                if (conn != null) conn.close(); //
+            } catch (SQLException ex) { //
+                ex.printStackTrace(); //
+            }
+        }
     }
 }

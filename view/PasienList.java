@@ -1,24 +1,24 @@
 package PBO_4C_SI_KELOMPOK_7.view; // <-- Menggunakan package yang sesuai
 
-import PBO_4C_SI_KELOMPOK_7.controller.PasienController;
-import PBO_4C_SI_KELOMPOK_7.model.Pasien;
+import PBO_4C_SI_KELOMPOK_7.controller.PasienController; //
+import PBO_4C_SI_KELOMPOK_7.model.Pasien; //
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.List;
+import java.util.List; //
 
 public class PasienList extends BaseFrame { // <-- Mengubah dari JFrame menjadi BaseFrame
 
     private JTable table;
     private DefaultTableModel tableModel;
+    private String currentUsername; // Store username
 
     public PasienList(String username) {
-        super("Daftar Pasien", username); // <-- Panggil konstruktor BaseFrame
-
-        // Hapus kode navbar yang sebelumnya ada di sini karena sudah ditangani oleh BaseFrame.
+        super("Daftar Pasien", username);
+        this.currentUsername = username;
 
         // Tabel
         tableModel = new DefaultTableModel(new Object[]{"ID", "Nama Lengkap", "No. Telepon", "Dokter Penanggung Jawab"}, 0) {
@@ -29,7 +29,7 @@ public class PasienList extends BaseFrame { // <-- Mengubah dari JFrame menjadi 
         };
 
         table = new JTable(tableModel);
-        loadPasien();
+        loadPasien(); // Initial load
 
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Daftar Pasien"));
@@ -42,9 +42,7 @@ public class PasienList extends BaseFrame { // <-- Mengubah dari JFrame menjadi 
             int selectedRow = table.getSelectedRow();
             if (selectedRow != -1) {
                 int pasienId = Integer.parseInt(table.getValueAt(selectedRow, 0).toString());
-                // PERUBAHAN: Sekarang PasienDetail menerima username
-                new PasienDetail(pasienId, username).setVisible(true); //
-                // dispose(); // Opsional, kalau mau tutup PasienList saat buka detail
+                new PasienDetail(pasienId, currentUsername).setVisible(true);
             } else {
                 JOptionPane.showMessageDialog(this, "Pilih pasien terlebih dahulu.");
             }
@@ -52,8 +50,8 @@ public class PasienList extends BaseFrame { // <-- Mengubah dari JFrame menjadi 
 
         JButton btnTambah = new JButton("Tambah Pasien");
         btnTambah.addActionListener(e -> {
-            new PasienTambahForm(username).setVisible(true);
-            dispose();
+            new PasienTambahForm(currentUsername, this).setVisible(true); // Pass 'this'
+            this.setVisible(false); // Hide this PasienList temporarily
         });
 
         JPanel bottomPanel = new JPanel();
@@ -67,17 +65,17 @@ public class PasienList extends BaseFrame { // <-- Mengubah dari JFrame menjadi 
         setVisible(true);
     }
 
-    private void loadPasien() {
-        List<Pasien> pasienList = PasienController.getAllPasien();
-        tableModel.setRowCount(0);
+    public void loadPasien() {
+        List<Pasien> pasienList = PasienController.getAllPasien(); //
+        tableModel.setRowCount(0); //
 
-        if (!pasienList.isEmpty()) {
-            for (Pasien p : pasienList) {
-                tableModel.addRow(new Object[]{
-                        p.getId(),
-                        p.getNama(),
-                        p.getTelepon(),
-                        "Dokter ID: " + p.getDokterId()
+        if (!pasienList.isEmpty()) { //
+            for (Pasien p : pasienList) { //
+                tableModel.addRow(new Object[]{ //
+                        p.getId(), //
+                        p.getNama(), //
+                        p.getTelepon(), //
+                        p.getDosis() // This will now contain the dokter_nama
                 });
             }
         }

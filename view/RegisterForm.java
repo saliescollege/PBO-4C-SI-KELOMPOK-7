@@ -14,7 +14,7 @@ public class RegisterForm extends JFrame {
         setLayout(null);
 
         // ==== Logo ====
-        ImageIcon logoIcon = new ImageIcon("assets/Logo-Klinik.png");
+        ImageIcon logoIcon = new ImageIcon("src\\PBO_4C_SI_KELOMPOK_7\\assets\\Logo_Klinik.png");
         Image logoImg = logoIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
         JLabel logoLabel = new JLabel(new ImageIcon(logoImg));
         logoLabel.setBounds((350 - 70) / 2, 20, 70, 70);

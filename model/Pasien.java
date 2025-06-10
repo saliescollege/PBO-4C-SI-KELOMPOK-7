@@ -32,6 +32,8 @@ public class Pasien {
     private String aksesVena;
     private int dokterId;
 
+    private String dokterNama;
+
     // --- GETTERS & SETTERS ---
 
     public int getId() {
@@ -216,5 +218,13 @@ public class Pasien {
 
     public void setDokterId(int dokterId) {
         this.dokterId = dokterId;
+    }
+
+    public String getDokterNama() {
+        return dokterNama;
+    }
+
+    public void setDokterNama(String dokterNama) {
+        this.dokterNama = dokterNama;
     }
 }
