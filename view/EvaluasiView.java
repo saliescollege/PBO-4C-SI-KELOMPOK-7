@@ -13,75 +13,53 @@ public class EvaluasiView extends BaseFrame {
 
     public EvaluasiView(String username) {
         super("Daftar Evaluasi Kemoterapi", username);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Agar tidak menutup aplikasi utama
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setSize(1000, 600);
         setLocationRelativeTo(null);
 
-        // Panel utama dengan border
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Judul
         JLabel titleLabel = new JLabel("Daftar Hasil Evaluasi Sesi Kemoterapi", SwingConstants.CENTER);
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
         mainPanel.add(titleLabel, BorderLayout.NORTH);
 
-        // Setup Tabel
-        String[] columns = {"ID Eval", "Tanggal", "Pasien", "Dokter", "Sesi Ke", "Catatan Penting"};
+        // Setup Tabel Sederhana
+        String[] columns = {"Tanggal", "Nama Pasien", "Nama Dokter", "Catatan Penting"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return false; // Membuat sel tidak bisa diedit
-            }
+            public boolean isCellEditable(int row, int column) { return false; }
         };
 
         evaluasiTable = new JTable(tableModel);
         evaluasiTable.setFillsViewportHeight(true);
         evaluasiTable.setRowHeight(25);
-        evaluasiTable.getColumnModel().getColumn(0).setMaxWidth(60);  // ID
-        evaluasiTable.getColumnModel().getColumn(1).setPreferredWidth(120); // Tanggal
-        evaluasiTable.getColumnModel().getColumn(2).setPreferredWidth(150); // Pasien
-        evaluasiTable.getColumnModel().getColumn(3).setPreferredWidth(150); // Dokter
-        evaluasiTable.getColumnModel().getColumn(4).setMaxWidth(60); // Sesi
-        evaluasiTable.getColumnModel().getColumn(5).setPreferredWidth(300); // Catatan
+        evaluasiTable.getColumnModel().getColumn(0).setPreferredWidth(120);
+        evaluasiTable.getColumnModel().getColumn(1).setPreferredWidth(150);
+        evaluasiTable.getColumnModel().getColumn(2).setPreferredWidth(150);
+        evaluasiTable.getColumnModel().getColumn(3).setPreferredWidth(300);
 
         JScrollPane scrollPane = new JScrollPane(evaluasiTable);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
-        // Panel tombol
+        // Tombol Tambah dihapus, diganti tombol Refresh
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton tambahButton = new JButton("Tambah Evaluasi Baru");
-        tambahButton.setBackground(new Color(40, 167, 69));
-        tambahButton.setForeground(Color.WHITE);
-        
         JButton refreshButton = new JButton("Refresh Data");
-
-        buttonPanel.add(tambahButton);
         buttonPanel.add(refreshButton);
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-        // Tambahkan mainPanel ke frame
         add(mainPanel);
 
-        // Aksi Tombol
         refreshButton.addActionListener(e -> loadEvaluasiData());
-        tambahButton.addActionListener(e -> {
-            new EvaluasiTambah(this, username).setVisible(true); // Buka form tambah
-        });
 
-        // Load data awal
         loadEvaluasiData();
     }
 
     public void loadEvaluasiData() {
-        tableModel.setRowCount(0); // Kosongkan tabel sebelum memuat data baru
+        tableModel.setRowCount(0);
 
-        // Query ini menggabungkan beberapa tabel untuk mendapatkan informasi yang relevan
-        String sql = "SELECT " +
-                     "  e.evaluasi_id, e.tanggal_evaluasi, e.catatan, " +
-                     "  p.nama_lengkap AS nama_pasien, " +
-                     "  d.nama AS nama_dokter, " +
-                     "  jt.sesi_ke " +
+        // Query disederhanakan
+        String sql = "SELECT e.tanggal_evaluasi, e.catatan, p.nama_lengkap AS nama_pasien, d.nama AS nama_dokter " +
                      "FROM evaluasi_kemo e " +
                      "JOIN jadwal_terapi jt ON e.jadwal_id = jt.jadwal_id " +
                      "JOIN rencana_terapi rt ON jt.terapi_id = rt.terapi_id " +
@@ -94,19 +72,15 @@ public class EvaluasiView extends BaseFrame {
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                int evaluasiId = rs.getInt("evaluasi_id");
                 Timestamp tanggalEvaluasi = rs.getTimestamp("tanggal_evaluasi");
                 String catatan = rs.getString("catatan");
                 String namaPasien = rs.getString("nama_pasien");
                 String namaDokter = rs.getString("nama_dokter");
-                int sesiKe = rs.getInt("sesi_ke");
 
                 tableModel.addRow(new Object[]{
-                    evaluasiId,
                     new SimpleDateFormat("dd-MM-yyyy HH:mm").format(tanggalEvaluasi),
                     namaPasien,
                     namaDokter,
-                    sesiKe,
                     catatan
                 });
             }

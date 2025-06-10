@@ -380,4 +380,140 @@ public class PasienController {
             }
         }
     }
+
+    // READ - Ambil Semua Pasien berdasarkan ID Dokter
+    public static List<Pasien> getPasienByDokterId(int dokterId) {
+        List<Pasien> list = new ArrayList<>();
+        String sql = "SELECT pasien_id, nama_lengkap, no_telepon FROM pasien WHERE dokter_id = ?";
+
+        try (Connection conn = DBConnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, dokterId);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Pasien p = new Pasien();
+                p.setId(rs.getInt("pasien_id"));
+                p.setNama(rs.getString("nama_lengkap"));
+                p.setTelepon(rs.getString("no_telepon"));
+                list.add(p);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Gagal mengambil data pasien berdasarkan dokter: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public static boolean simpanJadwalTerapi(int pasienId, List<LocalDate> jadwalDihasilkan) {
+        Connection conn = null;
+        int terapiId = -1;
+
+        // Langkah 1: Dapatkan terapi_id dari pasien_id
+        try (Connection tempConn = DBConnection.connect();
+             PreparedStatement pstmt = tempConn.prepareStatement("SELECT terapi_id FROM rencana_terapi WHERE pasien_id = ? ORDER BY tanggal_dibuat DESC LIMIT 1")) {
+            pstmt.setInt(1, pasienId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                terapiId = rs.getInt("terapi_id");
+            }
+        } catch (SQLException e) {
+            System.err.println("Gagal mendapatkan terapi_id: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+
+        if (terapiId == -1) {
+            System.err.println("Tidak ditemukan rencana terapi untuk pasien dengan ID: " + pasienId);
+            return false;
+        }
+
+        try {
+            conn = DBConnection.connect();
+            conn.setAutoCommit(false); // Mulai transaksi
+
+            // Langkah 2: Hapus jadwal lama yang belum terjadi untuk menghindari duplikasi
+            try (PreparedStatement deleteStmt = conn.prepareStatement("DELETE FROM jadwal_terapi WHERE terapi_id = ? AND tanggal_terapi >= CURDATE()")) {
+                deleteStmt.setInt(1, terapiId);
+                deleteStmt.executeUpdate();
+            }
+
+            // Langkah 3: Masukkan jadwal baru
+            String sqlInsert = "INSERT INTO jadwal_terapi (jadwal_dokter_id, terapi_id, sesi_ke, tanggal_terapi, jam_terapi, ruangan) VALUES (?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement insertStmt = conn.prepareStatement(sqlInsert)) {
+                
+                for (int i = 0; i < jadwalDihasilkan.size(); i++) {
+                    LocalDate tanggal = jadwalDihasilkan.get(i);
+                    int sesiKe = i + 1;
+                    
+                    // Asumsi sederhana: ambil jadwal dokter paling pagi pada hari itu
+                    // Anda bisa membuat logika ini lebih kompleks jika diperlukan
+                    String sqlJadwalDokter = "SELECT jadwal_id, jam_mulai FROM jadwal_dokter jd JOIN rencana_terapi rt ON jd.dokter_id = rt.dokter_id WHERE rt.terapi_id = ? AND jd.hari = ? ORDER BY jd.jam_mulai LIMIT 1";
+                    try (PreparedStatement jadwalDokterStmt = conn.prepareStatement(sqlJadwalDokter)) {
+                        jadwalDokterStmt.setInt(1, terapiId);
+                        jadwalDokterStmt.setString(2, tanggal.getDayOfWeek().name()); // Menggunakan nama hari Inggris (SENIN, SELASA, dst.)
+                        ResultSet rsJadwal = jadwalDokterStmt.executeQuery();
+
+                        if (rsJadwal.next()) {
+                            int jadwalDokterId = rsJadwal.getInt("jadwal_id");
+                            LocalTime jamTerapi = rsJadwal.getTime("jam_mulai").toLocalTime();
+
+                            insertStmt.setInt(1, jadwalDokterId);
+                            insertStmt.setInt(2, terapiId);
+                            insertStmt.setInt(3, sesiKe);
+                            insertStmt.setDate(4, java.sql.Date.valueOf(tanggal));
+                            insertStmt.setTime(5, java.sql.Time.valueOf(jamTerapi));
+                            insertStmt.setString(6, "RJ-1"); // Asumsi ruangan default
+                            insertStmt.addBatch();
+                        }
+                    }
+                }
+                insertStmt.executeBatch();
+            }
+
+            conn.commit(); // Selesaikan transaksi jika semua berhasil
+            return true;
+
+        } catch (SQLException e) {
+            System.err.println("Gagal menyimpan jadwal terapi ke database. Transaksi dibatalkan.");
+            e.printStackTrace();
+            try {
+                if (conn != null) conn.rollback();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            return false;
+        } finally {
+            try {
+                if (conn != null) conn.close();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    public static List<LocalDate> getJadwalTersimpan(int pasienId) {
+        List<LocalDate> jadwal = new ArrayList<>();
+        String sql = "SELECT jt.tanggal_terapi FROM jadwal_terapi jt " +
+                     "JOIN rencana_terapi rt ON jt.terapi_id = rt.terapi_id " +
+                     "WHERE rt.pasien_id = ? AND jt.tanggal_terapi >= CURDATE() " +
+                     "ORDER BY jt.tanggal_terapi";
+
+        try (Connection conn = DBConnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, pasienId);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                jadwal.add(rs.getDate("tanggal_terapi").toLocalDate());
+            }
+        } catch (SQLException e) {
+            System.err.println("Gagal mengambil jadwal tersimpan: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return jadwal;
+    }
 }

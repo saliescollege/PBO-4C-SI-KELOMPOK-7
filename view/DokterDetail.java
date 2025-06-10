@@ -6,19 +6,18 @@ import PBO_4C_SI_KELOMPOK_7.model.Dokter;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.List; // Import List
+import java.util.List;
 
 public class DokterDetail extends BaseFrame {
 
-    private JTextPane detailTextPane; // Changed to JTextPane for rich text capabilities
+    private JTextPane detailTextPane;
     private int dokterId;
 
-    // Modified: Constructor now accepts dokterId instead of individual fields
     public DokterDetail(int dokterId, String username) {
         super("Detail Dokter", username);
         this.dokterId = dokterId;
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Close only this window
-        setSize(800, 600); // Give more space for centering
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setSize(800, 600);
 
         Dokter dokter = DokterController.getDokterById(dokterId);
         if (dokter == null) {
@@ -54,7 +53,7 @@ public class DokterDetail extends BaseFrame {
 
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
-        populateDetail(dokter); // Populate using the Dokter object
+        populateDetail(dokter);
 
         JButton pasienDitanganiBtn = new JButton("Pasien yang Ditangani");
         pasienDitanganiBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -62,10 +61,8 @@ public class DokterDetail extends BaseFrame {
         pasienDitanganiBtn.setForeground(Color.WHITE);
         pasienDitanganiBtn.setFocusPainted(false);
         pasienDitanganiBtn.addActionListener(e -> {
-            // Placeholder for "Pasien yang Ditangani" functionality
-            // You would likely pass the dokterId to a new PasienDitangani view
-            JOptionPane.showMessageDialog(this, "Menampilkan daftar pasien yang ditangani oleh " + dokter.getNama() + " (ID: " + dokter.getId() + ")");
-            // Example: new PasienDitangani(dokter.getId(), username).setVisible(true);
+            // Membuka frame PasienDitangani dengan mengirimkan ID, nama dokter, dan username
+            new PasienDitangani(dokter.getId(), dokter.getNama(), username).setVisible(true);
         });
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -78,12 +75,11 @@ public class DokterDetail extends BaseFrame {
     }
 
     private void populateDetail(Dokter d) {
+        // ... (Isi metode ini sama seperti sebelumnya, tidak perlu diubah) ...
         StringBuilder sb = new StringBuilder();
-
         sb.append("<html><body style='font-family: SansSerif; font-size: 12pt; margin: 15px; background-color: white;'>");
         sb.append("<h2 style='text-align: center; color: #333;'>INFORMASI LENGKAP DOKTER</h2>");
         sb.append("<hr style='border: 0.5px solid #ccc;'><br>");
-
         sb.append("<p><b>DATA DOKTER:</b></p>");
         sb.append("<table border='0' cellspacing='0' cellpadding='4'>");
         sb.append(String.format("<tr><td width='150'>ID Dokter</td><td>: %d</td></tr>", d.getId()));
@@ -92,7 +88,6 @@ public class DokterDetail extends BaseFrame {
         sb.append(String.format("<tr><td>Pendidikan</td><td>: %s</td></tr>", d.getPendidikan()));
         sb.append(String.format("<tr><td>Legalitas</td><td>: %s</td></tr>", d.getLegalitas()));
         sb.append("</table><br>");
-
         sb.append("<p><b>JADWAL DOKTER:</b></p>");
         sb.append("<table border='0' cellspacing='0' cellpadding='4'>");
         List<String> schedules = d.getJadwal();
@@ -104,10 +99,8 @@ public class DokterDetail extends BaseFrame {
             }
         }
         sb.append("</table><br>");
-        
         sb.append("</body></html>");
-
         detailTextPane.setText(sb.toString());
-        detailTextPane.setCaretPosition(0); // Scroll to top
+        detailTextPane.setCaretPosition(0);
     }
 }

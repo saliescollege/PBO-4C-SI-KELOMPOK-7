@@ -6,10 +6,8 @@ import PBO_4C_SI_KELOMPOK_7.model.Dokter;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumnModel; // Import TableColumnModel
+import javax.swing.table.TableColumnModel;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.List;
 
 public class DokterList extends BaseFrame {
@@ -22,33 +20,30 @@ public class DokterList extends BaseFrame {
         super("Daftar Dokter", username);
         this.currentUsername = username;
 
-        // Table setup
-        tableModel = new DefaultTableModel(new Object[]{"ID", "Nama Dokter", "Spesialisasi", "Jadwal", "Detail"}, 0) {
+        // Setup Tabel - Kolom "Detail" dihilangkan
+        tableModel = new DefaultTableModel(new Object[]{"ID", "Nama Dokter", "Spesialisasi", "Jadwal"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 4;
+                // Semua sel tidak bisa diedit langsung
+                return false;
             }
         };
 
         table = new JTable(tableModel);
         // Menyesuaikan tinggi baris untuk mengakomodasi jadwal multi-baris
-        table.setRowHeight(90); // Menaikkan tinggi baris menjadi 90 piksel
+        table.setRowHeight(90);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // Hanya bisa pilih satu baris
 
         // Mendapatkan ColumnModel untuk mengatur lebar kolom
         TableColumnModel columnModel = table.getColumnModel();
+        columnModel.getColumn(0).setPreferredWidth(40);
+        columnModel.getColumn(0).setMaxWidth(60);
+        columnModel.getColumn(0).setMinWidth(30);
 
-        // Mengatur lebar preferred untuk kolom "ID" (kolom indeks 0)
-        columnModel.getColumn(0).setPreferredWidth(40); // Mengatur lebar kolom ID menjadi 40 piksel
-        columnModel.getColumn(0).setMaxWidth(60);   // Batasi lebar maksimum ID
-        columnModel.getColumn(0).setMinWidth(30);   // Batasi lebar minimum ID
-
-
-        // Custom Cell Renderer for "Jadwal" column to display multiline text
+        // Custom Cell Renderer untuk kolom "Jadwal" agar bisa multi-baris
         table.getColumn("Jadwal").setCellRenderer(new MultiLineTableCellRenderer());
         
-        // Button Renderer and Editor for "Detail" column
-        table.getColumn("Detail").setCellRenderer(new ButtonRendererDokter());
-        table.getColumn("Detail").setCellEditor(new ButtonEditorDokter(new JCheckBox(), this));
+        // Kode untuk Button Renderer dan Editor dihilangkan karena kolomnya sudah tidak ada
 
         loadDokter();
 
@@ -57,32 +52,61 @@ public class DokterList extends BaseFrame {
         JScrollPane scrollPane = new JScrollPane(table);
         panel.add(scrollPane, BorderLayout.CENTER);
 
+        // Panel bawah untuk menampung tombol "Lihat Detail"
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        JButton btnDetail = new JButton("Lihat Detail Dokter");
+
+        btnDetail.addActionListener(e -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow != -1) {
+                try {
+                    // Mendapatkan ID dokter dari kolom pertama (indeks 0) pada baris yang dipilih
+                    int dokterId = Integer.parseInt(table.getValueAt(selectedRow, 0).toString());
+                    
+                    // Membuka jendela DokterDetail, mirip seperti pada PasienList
+                    new DokterDetail(dokterId, currentUsername).setVisible(true);
+                    
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "ID Dokter tidak valid.", "Error Data", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                // Memberi tahu pengguna untuk memilih dokter dari tabel terlebih dahulu
+                JOptionPane.showMessageDialog(this, "Pilih dokter terlebih dahulu dari daftar.", "Informasi", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+
+        bottomPanel.add(btnDetail);
+
+        // Menambahkan panel utama dan panel tombol ke frame
         add(panel, BorderLayout.CENTER);
+        add(bottomPanel, BorderLayout.SOUTH);
+        
         setVisible(true);
     }
 
     public void loadDokter() {
-        List<Dokter> dokterList = DokterController.getAllDokter();
+        List<Dokter> dokterList = DokterController.getAllDokter(); //
         tableModel.setRowCount(0);
 
         if (!dokterList.isEmpty()) {
             for (Dokter d : dokterList) {
                 String jadwalHtml = "<html>";
-                if (d.getJadwal().isEmpty()) {
+                if (d.getJadwal().isEmpty()) { //
                     jadwalHtml += "Tidak Ada Jadwal";
                 } else {
-                    for (String s : d.getJadwal()) {
+                    for (String s : d.getJadwal()) { //
                         jadwalHtml += s + "<br>";
                     }
                 }
                 jadwalHtml += "</html>";
 
+                // Menambahkan data ke baris tabel, tanpa tombol "Lihat"
                 tableModel.addRow(new Object[]{
-                        d.getId(),
-                        d.getNama(),
-                        d.getSpesialisasi(),
-                        jadwalHtml,
-                        "Lihat"
+                        d.getId(), //
+                        d.getNama(), //
+                        d.getSpesialisasi(), //
+                        jadwalHtml
                 });
             }
         }
@@ -92,10 +116,13 @@ public class DokterList extends BaseFrame {
         return currentUsername;
     }
     
-    class MultiLineTableCellRenderer extends JLabel implements TableCellRenderer {
+    // Kelas ini tetap diperlukan untuk merender jadwal multi-baris
+    static class MultiLineTableCellRenderer extends JTextArea implements TableCellRenderer {
         public MultiLineTableCellRenderer() {
             setOpaque(true);
-            setVerticalAlignment(SwingConstants.TOP);
+            setLineWrap(true);
+            setWrapStyleWord(true);
+            setEditable(false);
             setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         }
 
@@ -103,7 +130,7 @@ public class DokterList extends BaseFrame {
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus,
                                                        int row, int column) {
-            setText(value == null ? "" : value.toString());
+            setText(value == null ? "" : value.toString().replaceAll("<br>", "\n").replaceAll("<html>|</html>", ""));
             if (isSelected) {
                 setBackground(table.getSelectionBackground());
                 setForeground(table.getSelectionForeground());
@@ -113,62 +140,5 @@ public class DokterList extends BaseFrame {
             }
             return this;
         }
-    }
-}
-
-class ButtonRendererDokter extends JButton implements TableCellRenderer {
-    public ButtonRendererDokter() {
-        setText("Lihat");
-    }
-
-    public Component getTableCellRendererComponent(JTable table, Object value,
-                                                   boolean isSelected, boolean hasFocus,
-                                                   int row, int column) {
-        return this;
-    }
-}
-
-class ButtonEditorDokter extends DefaultCellEditor {
-    protected JButton button;
-    private boolean clicked;
-    private JTable table;
-    private DokterList parentFrame;
-
-    public ButtonEditorDokter(JCheckBox checkBox, DokterList parentFrame) {
-        super(checkBox);
-        this.parentFrame = parentFrame;
-        button = new JButton("Lihat");
-        button.setOpaque(true);
-
-        button.addActionListener(e -> {
-            if (clicked && table != null) {
-                int row = table.getSelectedRow();
-                if (row >= 0) {
-                    int dokterId = (int) table.getValueAt(row, 0);
-                    new DokterDetail(dokterId, parentFrame.getCurrentUsername()).setVisible(true);
-                }
-            }
-            fireEditingStopped();
-        });
-    }
-
-    @Override
-    public Component getTableCellEditorComponent(JTable table, Object value,
-                                                 boolean isSelected, int row, int column) {
-        this.table = table;
-        clicked = true;
-        return button;
-    }
-
-    @Override
-    public Object getCellEditorValue() {
-        clicked = false;
-        return "Lihat";
-    }
-
-    @Override
-    public boolean stopCellEditing() {
-        clicked = false;
-        return super.stopCellEditing();
     }
 }
