@@ -4,18 +4,29 @@ import PBO_4C_SI_KELOMPOK_7.controller.EvaluasiController;
 import javax.swing.*;
 import java.awt.*;
 
-public class EvaluasiTambah extends JDialog { // Ubah dari JFrame ke JDialog
+public class EvaluasiTambah extends JDialog {
     private JTextArea kondisiField, efekSampingField, catatanField;
     private JButton simpanButton;
-    private int pasienId; // Simpan ID pasien
+    private int pasienId;
 
-    // Konstruktor baru: menerima Frame parent, ID dan nama pasien
+    // Konstruktor untuk parent berupa Frame
     public EvaluasiTambah(Frame parent, int pasienId, String pasienNama) {
-        super(parent, "Form Tambah Evaluasi", true); // Modal dialog
+        super(parent, "Form Tambah Evaluasi", true);
         this.pasienId = pasienId;
+        initUI(pasienNama);
+    }
 
+    // Konstruktor baru untuk parent berupa Dialog
+    public EvaluasiTambah(Dialog parent, int pasienId, String pasienNama) {
+        super(parent, "Form Tambah Evaluasi", true);
+        this.pasienId = pasienId;
+        initUI(pasienNama);
+    }
+
+    // Metode private untuk setup UI yang sama
+    private void initUI(String pasienNama) {
         setSize(500, 550);
-        setLocationRelativeTo(parent);
+        setLocationRelativeTo(getParent());
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -26,7 +37,6 @@ public class EvaluasiTambah extends JDialog { // Ubah dari JFrame ke JDialog
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Judul
         JLabel titleLabel = new JLabel("Evaluasi Sesi untuk Pasien:", SwingConstants.CENTER);
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
         gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
@@ -37,9 +47,6 @@ public class EvaluasiTambah extends JDialog { // Ubah dari JFrame ke JDialog
         gbc.gridy++;
         formPanel.add(pasienLabel, gbc);
 
-        // Hapus input Jadwal ID
-
-        // Kondisi Post Terapi
         gbc.gridy++; gbc.gridwidth = 1;
         gbc.gridx = 0;
         formPanel.add(new JLabel("Kondisi Pasca-Terapi:"), gbc);
@@ -50,7 +57,6 @@ public class EvaluasiTambah extends JDialog { // Ubah dari JFrame ke JDialog
         kondisiField.setWrapStyleWord(true);
         formPanel.add(new JScrollPane(kondisiField), gbc);
 
-        // Efek Samping
         gbc.gridy++;
         gbc.gridx = 0;
         formPanel.add(new JLabel("Efek Samping:"), gbc);
@@ -61,7 +67,6 @@ public class EvaluasiTambah extends JDialog { // Ubah dari JFrame ke JDialog
         efekSampingField.setWrapStyleWord(true);
         formPanel.add(new JScrollPane(efekSampingField), gbc);
         
-        // Catatan Tambahan
         gbc.gridy++;
         gbc.gridx = 0;
         formPanel.add(new JLabel("Catatan Tambahan:"), gbc);
@@ -93,16 +98,11 @@ public class EvaluasiTambah extends JDialog { // Ubah dari JFrame ke JDialog
             return;
         }
 
-        // Panggil controller baru
         boolean success = EvaluasiController.tambahEvaluasi(this.pasienId, kondisi, efek, catatan);
 
         if (success) {
             JOptionPane.showMessageDialog(this, "Data evaluasi berhasil disimpan!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
-            // Beri tahu parent untuk refresh jika perlu (opsional)
-            if (getParent() instanceof PasienDetail) {
-                 // Anda bisa menambahkan metode refresh di parent jika diperlukan
-            }
-            dispose(); // Tutup dialog
+            dispose();
         } else {
             JOptionPane.showMessageDialog(this, "Gagal menyimpan data.\nPastikan pasien memiliki riwayat jadwal terapi.", "Error Database", JOptionPane.ERROR_MESSAGE);
         }

@@ -1,10 +1,13 @@
 package PBO_4C_SI_KELOMPOK_7.controller;
 
 import PBO_4C_SI_KELOMPOK_7.db.DBConnection;
+import PBO_4C_SI_KELOMPOK_7.model.Evaluasi;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class EvaluasiController {
 
@@ -64,5 +67,49 @@ public class EvaluasiController {
             e.printStackTrace();
             return false;
         }
+    }
+    
+    /**
+     * Mengambil semua riwayat evaluasi untuk satu pasien spesifik.
+     * @param pasienId ID dari pasien.
+     * @return List dari objek Evaluasi.
+     */
+    public static List<Evaluasi> getEvaluasiByPasienId(int pasienId) {
+        List<Evaluasi> evaluasiList = new ArrayList<>();
+        String sql = "SELECT e.evaluasi_id, e.jadwal_id, e.kondisi_post_terapi, e.efek_samping, e.catatan, e.tanggal_evaluasi, " +
+                     "p.nama_lengkap AS nama_pasien, d.nama AS nama_dokter, jt.sesi_ke " +
+                     "FROM evaluasi_kemo e " +
+                     "JOIN jadwal_terapi jt ON e.jadwal_id = jt.jadwal_id " +
+                     "JOIN rencana_terapi rt ON jt.terapi_id = rt.terapi_id " +
+                     "JOIN pasien p ON rt.pasien_id = p.pasien_id " +
+                     "JOIN dokter d ON rt.dokter_id = d.dokter_id " +
+                     "WHERE p.pasien_id = ? " +
+                     "ORDER BY e.tanggal_evaluasi DESC";
+
+        try (Connection conn = DBConnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, pasienId);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Evaluasi eval = new Evaluasi();
+                eval.setEvaluasiId(rs.getInt("evaluasi_id"));
+                eval.setJadwalId(rs.getInt("jadwal_id"));
+                eval.setKondisiPostTerapi(rs.getString("kondisi_post_terapi"));
+                eval.setEfekSamping(rs.getString("efek_samping"));
+                eval.setCatatan(rs.getString("catatan"));
+                eval.setTanggalEvaluasi(rs.getTimestamp("tanggal_evaluasi"));
+                eval.setNamaPasien(rs.getString("nama_pasien"));
+                eval.setNamaDokter(rs.getString("nama_dokter"));
+                eval.setSesiKe(rs.getInt("sesi_ke"));
+                evaluasiList.add(eval);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Gagal mengambil data evaluasi pasien: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return evaluasiList;
     }
 }

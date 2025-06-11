@@ -41,7 +41,7 @@ public class Dashboard extends BaseFrame { // Mengubah dari JFrame menjadi BaseF
         dokterBtn.setPreferredSize(new Dimension(250, 250));
         dokterBtn.addActionListener(e -> {
             new DokterList(username).setVisible(true); // Open DokterList
-            // dispose(); // Uncomment if you want to close Dashboard when opening DokterList
+            dispose();
         });
 
         leftPanel.add(pasienBtn);

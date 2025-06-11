@@ -28,7 +28,7 @@ public class PasienDetail extends BaseFrame {
         super("Detail Pasien", username);
         this.pasienId = pasienId;
         this.username = username;
-        // ... (Kode konstruktor lainnya sama) ...
+        
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setSize(800, 600);
 
@@ -57,14 +57,28 @@ public class PasienDetail extends BaseFrame {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
         btnGenerateJadwal = new JButton("Generate Jadwal");
         btnLihatJadwal = new JButton("Lihat Jadwal");
-        btnGenerateJadwal.addActionListener(e -> handleGenerateJadwal());
-        btnLihatJadwal.addActionListener(e -> handleLihatJadwal());
-        btnLihatJadwal.setVisible(false);
         
+        btnGenerateJadwal.addActionListener(e -> handleGenerateJadwal(pasien));
+        btnLihatJadwal.addActionListener(e -> handleLihatJadwal());
+        
+        List<LocalDate> jadwalTersimpan = PasienController.getJadwalTersimpan(pasienId);
+        if (!jadwalTersimpan.isEmpty()) {
+            btnGenerateJadwal.setVisible(false);
+            btnLihatJadwal.setVisible(true);
+            this.jadwalTerakhirList = jadwalTersimpan;
+            this.jadwalTerakhirHTML = buildJadwalHtml(pasien, jadwalTersimpan);
+        } else {
+            btnGenerateJadwal.setVisible(true);
+            btnLihatJadwal.setVisible(false);
+        }
+        
+        JButton btnRiwayatEvaluasi = new JButton("Riwayat Evaluasi");
+        btnRiwayatEvaluasi.addActionListener(e -> {
+            new EvaluasiView(this, this.username, pasienId, pasien.getNama()).setVisible(true);
+        });
 
         JButton btnEvaluasi = new JButton("Tambah Evaluasi Sesi");
         btnEvaluasi.addActionListener(e -> {
-            // Membuka form tambah evaluasi, mengirimkan frame ini sebagai parent, beserta ID dan nama pasien
             new EvaluasiTambah(this, pasienId, pasien.getNama()).setVisible(true);
         });
 
@@ -76,27 +90,35 @@ public class PasienDetail extends BaseFrame {
             if (confirm == JOptionPane.YES_OPTION) {
                 if (PasienController.deletePasien(pasienId)) {
                     JOptionPane.showMessageDialog(this, "Data pasien berhasil dihapus.");
-                    new PasienList(username).setVisible(true);
+                    for (Window window : Window.getWindows()) {
+                        if (window instanceof PasienList) {
+                            ((PasienList) window).loadPasien();
+                            break;
+                        }
+                    }
                     dispose();
                 } else {
                     JOptionPane.showMessageDialog(this, "Gagal menghapus data pasien.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
+        
         JButton btnTutup = new JButton("Tutup");
         btnTutup.addActionListener(e -> dispose());
+        
         buttonPanel.add(btnGenerateJadwal);
         buttonPanel.add(btnLihatJadwal);
+        buttonPanel.add(btnRiwayatEvaluasi);
         buttonPanel.add(btnEvaluasi);
         buttonPanel.add(btnHapus);
         buttonPanel.add(btnTutup);
+
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
         add(mainPanel);
         setVisible(true);
     }
 
-    private void handleGenerateJadwal() {
-        // ... (Kode input dialog sama seperti sebelumnya) ...
+    private void handleGenerateJadwal(Pasien pasien) {
         String startDateStr = JOptionPane.showInputDialog(this, "Masukkan tanggal mulai (format: yyyy-MM-dd):", LocalDate.now().toString());
         if (startDateStr == null || startDateStr.trim().isEmpty()) return;
         String cyclesStr = JOptionPane.showInputDialog(this, "Masukkan jumlah siklus yang akan dibuat:", "6");
@@ -106,28 +128,22 @@ public class PasienDetail extends BaseFrame {
             LocalDate tanggalMulai = LocalDate.parse(startDateStr);
             int jumlahSiklus = Integer.parseInt(cyclesStr);
 
-            Pasien pasien = PasienController.getPasienById(this.pasienId);
             List<DokterJadwal> jadwalDokter = PasienController.getDokterSchedules(pasien.getDokterId());
             
-            // Simpan hasil generate ke variabel instance
             this.jadwalTerakhirList = generateJadwalTerapi(pasien, jadwalDokter, tanggalMulai, jumlahSiklus);
             this.jadwalTerakhirHTML = buildJadwalHtml(pasien, this.jadwalTerakhirList);
 
-            // Tampilkan hasil dengan tombol Simpan
             displayJadwalPopup(this.jadwalTerakhirHTML, "Hasil Generate Jadwal", true);
-
-            btnGenerateJadwal.setVisible(false);
-            btnLihatJadwal.setVisible(true);
 
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Input tidak valid atau terjadi error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
         }
     }
 
     private void handleLihatJadwal() {
         if (this.jadwalTerakhirHTML != null) {
-            // Tampilkan kembali hasil, tapi tanpa tombol Simpan
-            displayJadwalPopup(this.jadwalTerakhirHTML, "Jadwal Terakhir Dibuat", false);
+            displayJadwalPopup(this.jadwalTerakhirHTML, "Jadwal Tersimpan", false);
         }
     }
 
@@ -141,7 +157,6 @@ public class PasienDetail extends BaseFrame {
         JScrollPane scrollPane = new JScrollPane(textPane);
         scrollPane.setPreferredSize(new Dimension(450, 350));
 
-        // Opsi tombol untuk JOptionPane
         Object[] options;
         if (showSaveButton) {
             options = new Object[]{"Simpan ke Database", "Tutup"};
@@ -157,18 +172,18 @@ public class PasienDetail extends BaseFrame {
             if (dialog.isVisible() && (e.getSource() == optionPane) && (prop.equals(JOptionPane.VALUE_PROPERTY))) {
                 Object value = optionPane.getValue();
 
-                // Jika tombol "Simpan ke Database" diklik
                 if (value.equals("Simpan ke Database")) {
                     boolean success = PasienController.simpanJadwalTerapi(this.pasienId, this.jadwalTerakhirList);
                     if (success) {
                         JOptionPane.showMessageDialog(dialog, "Jadwal berhasil disimpan ke database!");
+                        btnGenerateJadwal.setVisible(false);
+                        btnLihatJadwal.setVisible(true);
                         dialog.setVisible(false);
                     } else {
                         JOptionPane.showMessageDialog(dialog, "Gagal menyimpan jadwal.", "Error", JOptionPane.ERROR_MESSAGE);
-                        // Reset value agar dialog tidak tertutup
                         optionPane.setValue(JOptionPane.UNINITIALIZED_VALUE); 
                     }
-                } else { // Jika tombol "Tutup" diklik
+                } else { 
                     dialog.setVisible(false);
                 }
             }
@@ -177,7 +192,7 @@ public class PasienDetail extends BaseFrame {
         dialog.setVisible(true);
     }
 
-     private String buildJadwalHtml(Pasien pasien, List<LocalDate> jadwal) {
+    private String buildJadwalHtml(Pasien pasien, List<LocalDate> jadwal) {
         StringBuilder sb = new StringBuilder();
         sb.append("<html><body style='font-family: SansSerif; font-size: 10pt; padding: 10px;'>");
         sb.append("<h2 style='text-align: center; color: #333;'>JADWAL RENCANA TERAPI</h2>");
@@ -194,7 +209,7 @@ public class PasienDetail extends BaseFrame {
         sb.append("<tr style='background-color: #f0f0f0; text-align: center;'><th>Sesi Ke-</th><th>Perkiraan Tanggal Terapi</th></tr>");
 
         if (jadwal.isEmpty()) {
-            sb.append("<tr><td colspan='2' style='text-align:center;'>Tidak ada jadwal yang bisa dibuat.</td></tr>");
+            sb.append("<tr><td colspan='2' style='text-align:center;'>Tidak ada jadwal yang bisa dibuat. Periksa jadwal praktik dokter.</td></tr>");
         } else {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd MMMM yyyy", new Locale("id", "ID"));
             for (int i = 0; i < jadwal.size(); i++) {
@@ -208,6 +223,7 @@ public class PasienDetail extends BaseFrame {
         return sb.toString();
     }
     
+    // --- LOGIKA GENERATE JADWAL DIPERBARUI ---
     private List<LocalDate> generateJadwalTerapi(Pasien pasien, List<DokterJadwal> jadwalDokter, LocalDate tanggalMulai, int jumlahSiklus) {
         List<LocalDate> hasilJadwal = new ArrayList<>();
         int intervalSiklus = 0;
@@ -226,11 +242,12 @@ public class PasienDetail extends BaseFrame {
 
         if (hariPraktik.isEmpty()) return hasilJadwal;
 
-        LocalDate tanggalSiklusBerikutnya = tanggalMulai;
+        LocalDate tanggalAwalPencarian = tanggalMulai;
 
         for (int i = 0; i < jumlahSiklus; i++) {
-            LocalDate tanggalValid = tanggalSiklusBerikutnya;
+            LocalDate tanggalValid = tanggalAwalPencarian;
             boolean tanggalDitemukan = false;
+            // Cari hari praktik tersedia dalam 14 hari ke depan
             for (int j = 0; j < 14 && !tanggalDitemukan; j++) {
                 if (hariPraktik.contains(tanggalValid.getDayOfWeek())) {
                     hasilJadwal.add(tanggalValid);
@@ -239,7 +256,15 @@ public class PasienDetail extends BaseFrame {
                     tanggalValid = tanggalValid.plusDays(1);
                 }
             }
-            tanggalSiklusBerikutnya = tanggalSiklusBerikutnya.plusDays(intervalSiklus);
+            
+            // Hitung tanggal awal pencarian untuk siklus berikutnya
+            if (tanggalDitemukan) {
+                // Berdasarkan tanggal terakhir yang berhasil ditemukan + interval
+                tanggalAwalPencarian = hasilJadwal.get(hasilJadwal.size() - 1).plusDays(intervalSiklus);
+            } else {
+                // Jika dalam 14 hari tidak ditemukan, lompat saja berdasarkan tanggal pencarian terakhir + interval
+                tanggalAwalPencarian = tanggalAwalPencarian.plusDays(intervalSiklus);
+            }
         }
         return hasilJadwal;
     }
@@ -281,7 +306,7 @@ public class PasienDetail extends BaseFrame {
         sb.append("<table border='0' cellspacing='0' cellpadding='4'>");
         sb.append(String.format("<tr><td width='150'>Jenis Kemoterapi</td><td>: %s</td></tr>", p.getJenisKemoterapi() != null ? p.getJenisKemoterapi() : "-"));
         sb.append(String.format("<tr><td>Dosis</td><td>: %s</td></tr>", p.getDosis() != null ? p.getDosis() : "-"));
-        sb.append(String.format("<tr><td>Siklus</td><td>: %s</td></tr>", p.getSiklus() != null ? p.getSiklus() : "-"));
+        sb.append(String.format("<tr><td>Siklus</td><td>: %s hari</td></tr>", p.getSiklus() != null ? p.getSiklus() : "-"));
         sb.append(String.format("<tr><td>Premedikasi</td><td>: %s</td></tr>", p.getPremedikasi() != null ? p.getPremedikasi() : "-"));
         sb.append(String.format("<tr><td>Akses Vena</td><td>: %s</td></tr>", p.getAksesVena() != null ? p.getAksesVena() : "-"));
         sb.append("</table><br>");
